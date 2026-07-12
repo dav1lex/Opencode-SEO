@@ -31,7 +31,7 @@ test("page evidence collector returns stable core fields", () => {
 
   expect(result.title).toBe("Example Page")
   expect(result.language).toBe("en")
-  expect(result.counts.forms).toBe(0)
+  expect(result.images).toEqual({ total: 0, items: [], truncated: false })
   expect(result.structuredData).toEqual({ jsonLd: [] })
   expect(result.hreflang.hasSelfRef).toBe(false)
   expect(result.links.nonHttp).toBe(0)
@@ -154,4 +154,108 @@ test("images object includes total, items, and truncated flag", () => {
   expect(result.images.total).toBe(350)
   expect(result.images.items.length).toBe(300)
   expect(result.images.truncated).toBe(true)
+})
+
+test("computes reservesSpace, aboveFold, and transferSize for images", () => {
+  const source = readFileSync(
+    new URL("../.opencode/skills/seo-page/collect-page-evidence.js", import.meta.url),
+    "utf8",
+  )
+  const collector = eval(source)
+
+  const img = (attrs, box, style) => ({
+    currentSrc: attrs.src,
+    src: attrs.src,
+    naturalWidth: 100,
+    naturalHeight: 100,
+    hasAttribute: (n) => n === "alt",
+    getAttribute: (n) => (n === "alt" ? "x" : (attrs[n] ?? null)),
+    getBoundingClientRect: () => box,
+  })
+
+  // Reserves space via width/height attributes; below the fold; lazy is correct here.
+  const sized = img(
+    { src: "https://example.com/a.png", width: "800", height: "600", loading: "lazy" },
+    { width: 800, height: 600, top: 2000, bottom: 2600 },
+  )
+  // No dimensions, no aspect-ratio, above the fold, lazy-loaded: two defects.
+  const unsized = img(
+    { src: "https://example.com/b.png", loading: "lazy" },
+    { width: 400, height: 300, top: 10, bottom: 310 },
+  )
+
+  const styles = new Map([
+    [sized, { aspectRatio: "auto", display: "block", visibility: "visible" }],
+    [unsized, { aspectRatio: "auto", display: "block", visibility: "visible" }],
+  ])
+
+  const document = {
+    title: "T",
+    documentElement: { lang: "en" },
+    body: { innerText: "T", cloneNode: () => ({ textContent: "T", querySelectorAll: () => [] }) },
+    querySelector: () => null,
+    querySelectorAll: (sel) => (sel === "img" ? [sized, unsized] : []),
+  }
+  const performance = {
+    getEntriesByType: (type) =>
+      type === "resource"
+        ? [
+            { name: "https://example.com/a.png", initiatorType: "img", transferSize: 45_000 },
+            // transferSize 0 means "not reported", and must not become 0 bytes.
+            { name: "https://example.com/b.png", initiatorType: "img", transferSize: 0 },
+          ]
+        : [],
+  }
+
+  const result = collector({
+    document,
+    location: { href: "https://example.com/", origin: "https://example.com" },
+    performance,
+    getComputedStyle: (node) => styles.get(node),
+    viewportHeight: 800,
+  })
+
+  const [a, b] = result.images.items
+  expect(a.reservesSpace).toBe(true)
+  expect(a.aboveFold).toBe(false)
+  expect(a.transferSize).toBe(45_000)
+
+  expect(b.reservesSpace).toBe(false)
+  expect(b.aboveFold).toBe(true)
+  expect(b.attributes.loading).toBe("lazy")
+  expect(b.transferSize).toBeNull()
+})
+
+test("a CSS aspect-ratio alone reserves space", () => {
+  const source = readFileSync(
+    new URL("../.opencode/skills/seo-page/collect-page-evidence.js", import.meta.url),
+    "utf8",
+  )
+  const collector = eval(source)
+
+  const node = {
+    currentSrc: "https://example.com/c.png",
+    src: "https://example.com/c.png",
+    naturalWidth: 10,
+    naturalHeight: 10,
+    hasAttribute: () => false,
+    getAttribute: () => null,
+    getBoundingClientRect: () => ({ width: 300, height: 150, top: 0, bottom: 150 }),
+  }
+
+  const result = collector({
+    document: {
+      title: "T",
+      documentElement: { lang: "en" },
+      body: { innerText: "T", cloneNode: () => ({ textContent: "T", querySelectorAll: () => [] }) },
+      querySelector: () => null,
+      querySelectorAll: (sel) => (sel === "img" ? [node] : []),
+    },
+    location: { href: "https://example.com/", origin: "https://example.com" },
+    performance: { getEntriesByType: () => [] },
+    getComputedStyle: () => ({ aspectRatio: "2 / 1", display: "block", visibility: "visible" }),
+    viewportHeight: 800,
+  })
+
+  expect(result.images.items[0].reservesSpace).toBe(true)
 })

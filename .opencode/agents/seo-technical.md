@@ -25,7 +25,10 @@ Check:
 - redirect chain from `page-http.json`: more than one hop, or a hop crossing hostname or protocol, is `TECH-REDIRECT-CHAIN`. A single HTTP-to-HTTPS or trailing-slash hop is normal and not a finding
 - JavaScript dependency: compare `raw.textLength` in `page-http.json` against `domText` length in `page-evidence.json`. A near-empty server response that renders full content is `TECH-JS-DEPENDENT`. Report the dependency; never claim the page will not be indexed
 - rendered content availability and obvious client-rendering failures
-- image alt text and explicit dimensions
+- image alt text
+- image layout: for each entry in `images.items`, `reservesSpace: false` on a visible image is `TECH-IMAGE-DIMENSIONS` — it has neither a width/height attribute pair nor a CSS aspect-ratio, so it shifts the layout on arrival. `aboveFold: true` combined with `attributes.loading === "lazy"` is `TECH-IMAGE-LAZY-LCP`. Below-the-fold lazy loading is correct and is not a finding
+- image weight: `transferSize` is the measured byte count. Compare it against the rendered box before calling an image heavy. `null` means the browser did not report it (cache hit, or cross-origin without `Timing-Allow-Origin`) — that is unknown, not small, and cannot support a finding
+- social preview: `social.openGraph` and `social.twitter`. Absent or incomplete cards are `TECH-SOCIAL-PREVIEW` at low priority. This affects how shared links render, not search ranking — never claim otherwise
 - mobile and accessibility basics affecting discovery or use
 - measured performance: `page-performance.json` is the only sanctioned source. Cite the metric, the number, and whether it is CrUX field data or Lighthouse lab data. When `field` is `null` the page has too little traffic for a CrUX record — that is not a defect. When the file is absent, make no performance claim at all
 - performance outlier detection: compare TTFB, transfer size, and decoded body size across pages; flag values >3× site median

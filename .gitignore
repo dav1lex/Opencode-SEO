@@ -1,1 +1,4 @@
 /.playwright-mcp
+*-analysis/evidence/
+.env
+.env.*

@@ -3,6 +3,7 @@
   location = globalThis.location,
   performance = globalThis.performance,
   getComputedStyle = globalThis.getComputedStyle,
+  viewportHeight = globalThis.innerHeight ?? 0,
 } = {}) => {
   const text = (value) => value?.trim().replace(/\s+/g, " ") || null
   const content = (selector) =>
@@ -70,6 +71,16 @@
   const hasSelfRef = hreflang.some((h) => h.href === currentUrlNorm)
   const hasXDefault = hreflangRaw.some((h) => h.lang === "x-default")
 
+  // Per-resource byte weight, so image weight is measured rather than guessed from a
+  // network log. transferSize is 0 on a cache hit and for cross-origin responses that
+  // send no Timing-Allow-Origin header; treat 0 as unknown, never as "small".
+  const resourceBytes = new Map(
+    performance
+      .getEntriesByType("resource")
+      .filter((entry) => entry.initiatorType === "img" && entry.transferSize > 0)
+      .map((entry) => [entry.name, entry.transferSize]),
+  )
+
   const visibleText = text(document.body?.innerText)
   const bodyClone = document.body?.cloneNode(true)
   bodyClone
@@ -135,8 +146,14 @@
       const items = allImages.slice(0, 300).map((node) => {
         const box = node.getBoundingClientRect()
         const style = getComputedStyle(node)
+        const src = text(node.currentSrc || node.src)
+        // A width/height attribute pair or a CSS aspect-ratio reserves the box before
+        // the bytes land. Without either, the image shifts the layout when it loads.
+        const reservesSpace =
+          (!!node.getAttribute("width") && !!node.getAttribute("height")) ||
+          (style.aspectRatio !== "auto" && !!style.aspectRatio)
         return {
-          src: text(node.currentSrc || node.src),
+          src,
           alt: node.hasAttribute("alt") ? node.getAttribute("alt") : null,
           attributes: {
             width: node.getAttribute("width"),
@@ -146,6 +163,9 @@
           intrinsic: { width: node.naturalWidth, height: node.naturalHeight },
           rendered: { width: box.width, height: box.height },
           aspectRatio: style.aspectRatio,
+          reservesSpace,
+          aboveFold: box.top < viewportHeight && box.bottom > 0,
+          transferSize: src ? (resourceBytes.get(src) ?? null) : null,
           visible:
             box.width > 0 &&
             box.height > 0 &&
@@ -173,9 +193,5 @@
           ttfb: Math.round(navigation.responseStart),
         }
       : null,
-    counts: {
-      forms: list("form").length,
-      buttons: list("button").length,
-    },
   }
 }

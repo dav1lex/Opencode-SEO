@@ -49,6 +49,11 @@ export const rules = {
   "TECH-PERFORMANCE-OUTLIER": ["technical", "medium"],
   "TECH-REDIRECT-CHAIN": ["technical", "medium"],
   "TECH-JS-DEPENDENT": ["technical", "medium"],
+  "TECH-IMAGE-DIMENSIONS": ["technical", "medium"],
+  "TECH-IMAGE-LAZY-LCP": ["technical", "medium"],
+  "TECH-IMAGE-WEIGHT": ["technical", "medium"],
+  "TECH-SOCIAL-PREVIEW": ["technical", "low"],
+  "SCHEMA-SELF-RATING": ["schema", "medium"],
   "SCHEMA-CROSS-PAGE-CONFLICT": ["schema", "high"],
   "SCHEMA-MISSING-CLASS": ["schema", "low"],
 } as const

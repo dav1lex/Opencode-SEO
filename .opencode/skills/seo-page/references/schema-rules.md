@@ -6,6 +6,7 @@
 - `SCHEMA-CONTENT-MISMATCH`: Markup materially disagrees with visible page content or advertises unavailable functionality. High maximum.
 - `SCHEMA-DEPRECATED`: Markup targets a retired or unsupported Google feature and creates misleading expectations. Medium maximum.
 - `SCHEMA-SEARCH-ACTION`: SearchAction points to unverified or unavailable search behavior. Medium maximum.
+- `SCHEMA-SELF-RATING`: The site marks up `aggregateRating` or `Review` for its own Organization, LocalBusiness, or Product. Medium maximum. Google's structured-data policy prohibits self-serving review markup, and it is ineligible for rich results regardless of review count. Evidence must name the entity and the rating property.
 
 Current constraints:
 

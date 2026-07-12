@@ -24,6 +24,7 @@ Check:
 - absolute URLs and ISO 8601 dates where required
 - agreement between markup and visible page content
 - placeholders, contradictions, duplicate entities, and misleading claims
+- self-serving review markup: `aggregateRating` or `Review` on the site's own Organization, LocalBusiness, or Product is `SCHEMA-SELF-RATING`. Google's policy prohibits it and it earns no rich result at any review count. Flag it when present; the review count is not what makes it invalid
 - optional enhancements supported by visible content, reported separately from findings
 - cross-page entity consistency: same entity type across pages must agree on identifiers, descriptions, and core properties
 - missing schema class: flag when a page type commonly benefiting from structured data has none while peers of the same type do
