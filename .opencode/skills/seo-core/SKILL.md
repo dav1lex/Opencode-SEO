@@ -9,7 +9,7 @@ Act as orchestrator. Keep evidence separate from judgment.
 
 ## Current workflows
 
-- `page <url>`: inspect one rendered page.
+- `page <url>`: load `seo-page` and inspect one rendered page.
 
 For unsupported workflows, state they are not built. Do not simulate missing capabilities.
 
