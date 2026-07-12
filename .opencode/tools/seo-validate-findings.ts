@@ -3,18 +3,27 @@ import { validateFindings, validatePassedChecks } from "../lib/findings"
 
 export default tool({
   description:
-    "Validate merged SEO findings and passed checks before presenting a final report. Rejects unknown rule IDs, priorities above a rule's ceiling, unmeasured performance claims, search-feature promises, ranking and traffic claims, and duplicates. Each finding's `impact` is derived from its rule — do not write one; anything supplied is discarded. Passed checks must be rule IDs, not prose.",
+    "Validate an audit before presenting it. `detected` is the verbatim output of seo-detect; `judged` is what the specialists concluded. A rule seo-detect owns may not appear in `judged` — it is computed from the evidence and hand-reasoning about it has produced false positives. Each finding's `impact` is derived from its rule; anything supplied is discarded. Passed checks must be rule IDs.",
   args: {
     target: tool.schema.string().describe("Normalized audited page URL"),
-    payload: tool.schema.string().describe("JSON array of merged SEO findings"),
+    detected: tool.schema
+      .string()
+      .describe("JSON array from seo-detect, passed through verbatim and unedited"),
+    judged: tool.schema
+      .string()
+      .describe("JSON array of specialist findings that required judgment"),
     passedChecks: tool.schema
       .string()
       .optional()
       .describe("JSON array of rule IDs that were checked and passed"),
   },
-  async execute({ target, payload, passedChecks }) {
+  async execute({ target, detected, judged, passedChecks }) {
+    const computed = validateFindings(JSON.parse(detected), target)
+    const reasoned = validateFindings(JSON.parse(judged), target, { judgedOnly: true })
+
+    // Detected findings come first: they are exhaustive and were not written by a reader.
     return JSON.stringify({
-      findings: validateFindings(JSON.parse(payload), target),
+      findings: validateFindings([...computed, ...reasoned], target),
       passedChecks: passedChecks ? validatePassedChecks(JSON.parse(passedChecks)) : [],
     })
   },

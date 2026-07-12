@@ -56,7 +56,9 @@ Subagents must not fetch pages again. Per-page findings carry the page URL in `e
 
 Merge duplicates across agents. Per-page findings include `page`. Site-wide findings include `prevalence` with the affected page count.
 
-Serialize merged findings as JSON and call `seo-validate-findings` with the entry URL as `target`. Fix whatever it rejects; never skip validation. Pass the passed checks to the validator too, as a JSON array of rule IDs — not prose. Scope limits and collection failures stay out of both payloads.
+Call `seo-validate-findings` with three payloads: `detected` (the `seo-detect` output for every page, verbatim), `judged` (what the specialists concluded), and `passedChecks` (a JSON array of rule IDs). It rejects any detector-owned rule appearing in `judged`; drop the specialist's version when it does.
+
+Fix whatever it rejects; never skip validation. Scope limits and collection failures stay out of all payloads.
 
 For every finding provide `rule`, `issue`, `evidence`, `fix`, `priority`, and `confidence`. Do not supply `category` or `impact`: the validator derives both from the rule ID, and anything you write there is discarded. Impact is a property of the rule, not of the page.
 

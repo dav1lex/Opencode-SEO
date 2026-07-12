@@ -270,6 +270,34 @@ function validateFixDomains(fix: string, target?: string) {
 }
 
 /**
+ * Rules `seo-detect` computes from evidence. A specialist may not report these — not because
+ * it is discouraged from doing so in a prompt, but because the validator refuses them.
+ *
+ * Both false positives this tool has produced came from a model reporting a rule in this set:
+ * a working `/blog` called broken (it pattern-matched "FAILED" in a network log), and a
+ * working `Disallow: /api/` called nullified (it reasoned about the robots spec instead of
+ * parsing the file). The agent prompt already said "do not report these". It did anyway.
+ * Prose is not enforcement.
+ */
+export const detectorRules = new Set([
+  "TECH-INDEX-CONFLICT",
+  "TECH-META-MISSING",
+  "TECH-REDIRECT-CHAIN",
+  "TECH-JS-DEPENDENT",
+  "SCHEMA-PARSE",
+  "TECH-IMAGE-ALT",
+  "TECH-IMAGE-DIMENSIONS",
+  "TECH-IMAGE-LAZY-LCP",
+  "TECH-IMAGE-WEIGHT",
+  "TECH-LINK-ANCHOR-GENERIC",
+  "TECH-LINK-ANCHOR-CONFLICT",
+  "TECH-LINK-BROKEN",
+  "TECH-ROBOTS-BLOCK",
+  "HREFLANG-SELF-MISSING",
+  "TECH-SOCIAL-PREVIEW",
+])
+
+/**
  * Passed checks were an unguarded surface: nothing validated them, and a real audit invented
  * the rule ID `SCHEMA-FAQ-MATCH` there. Anything a report presents as a rule must be one.
  */
@@ -282,7 +310,16 @@ export function validatePassedChecks(input: unknown): string[] {
   })
 }
 
-export function validateFindings(input: unknown, target?: string): Finding[] {
+export type ValidateOptions = {
+  /** True for specialist output, which may not claim a rule the detector owns. */
+  judgedOnly?: boolean
+}
+
+export function validateFindings(
+  input: unknown,
+  target?: string,
+  options: ValidateOptions = {},
+): Finding[] {
   if (!Array.isArray(input)) throw new Error("Findings payload must be an array")
 
   const seen = new Set<string>()
@@ -307,6 +344,10 @@ export function validateFindings(input: unknown, target?: string): Finding[] {
     // Errors from here on name the rule as well as the index: a real audit read "Finding 1"
     // as the first finding, rewrote the wrong one five times, and never fixed the real problem.
     const at = `Finding ${index} (${rule})`
+    if (options.judgedOnly && detectorRules.has(rule))
+      throw new Error(
+        `${at} is computed by seo-detect from the evidence and may not be judged by hand. Drop it; the detected finding is already in the report.`,
+      )
     if (typeof finding.priority !== "string" || !priorities.includes(finding.priority as Finding["priority"]))
       throw new Error(`${at} has invalid priority`)
     if (priorities.indexOf(finding.priority as Finding["priority"]) > priorities.indexOf(policy.max))
@@ -327,10 +368,15 @@ export function validateFindings(input: unknown, target?: string): Finding[] {
       impact: policy.impact,
     } as Finding
 
-    // The remaining guards police issue/evidence/fix — fields the author must write. They
-    // are a tripwire for careless phrasing, not a boundary; the boundary is the derived
-    // impact above, plus the rule registry itself.
-    const combined = `${normalized.issue} ${normalized.evidence} ${normalized.fix}`
+    // The guards police what the audit ASSERTS, not what it QUOTES.
+    //
+    // Quoted spans in `evidence` are the audited page's own words. A real audit had to drop
+    // a true CONTENT-CLAIM-SUPPORT finding — the site claimed "Pozycje w Google zostają"
+    // ("your Google positions stay") with no evidence — because quoting that claim tripped
+    // the ranking guard. Blocking the tool from REPORTING a ranking claim is the exact
+    // inverse of the intent. So quoted text is stripped before the guards run.
+    const unquote = (text: string) => text.replace(/"[^"]*"|'[^']*'|«[^»]*»|„[^”]*”/g, " ")
+    const combined = `${normalized.issue} ${unquote(normalized.evidence)} ${normalized.fix}`
     if (rule !== "TECH-PERFORMANCE-MEASURED" && /\b(LCP|INP|CLS|Core Web Vitals)\b/i.test(combined))
       throw new Error(`${at} makes unmeasured performance claim`)
     if (

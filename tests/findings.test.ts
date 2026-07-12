@@ -259,3 +259,85 @@ test("validation errors name the rule, not just a zero-based index", () => {
     ]),
   ).toThrow("Finding 1 (TECH-HEADING-CLARITY) exceeds rule priority")
 })
+
+test("quoting the page's own ranking claim is the finding, not a violation", () => {
+  // A real audit dropped this true finding because quoting the claim tripped the guard.
+  const result = validateFindings([
+    {
+      rule: "CONTENT-CLAIM-SUPPORT",
+      issue: "The page promises search-position preservation with no supporting evidence",
+      evidence: 'page-snapshot.md: "Ruch zostaje. Pozycje w Google zostają." — no method, timeframe, or case reference',
+      fix: "Remove the promise, or support it with a named case and a measurement window",
+      priority: "high",
+      confidence: "high",
+    },
+  ])
+  expect(result).toHaveLength(1)
+})
+
+test("but asserting a ranking claim outside quotes is still rejected", () => {
+  expect(() =>
+    validateFindings([
+      {
+        ...finding,
+        issue: "Fixing this will preserve your Google rankings",
+        evidence: 'page-snapshot.md: "some quoted copy"',
+      },
+    ]),
+  ).toThrow("unsupported ranking or traffic claim")
+})
+
+test("a specialist may not hand-judge a rule the detector owns", () => {
+  // Both false positives this tool produced were exactly this: a model reasoning about a
+  // rule that is computed from evidence.
+  expect(() =>
+    validateFindings(
+      [
+        {
+          rule: "TECH-ROBOTS-BLOCK",
+          issue: "Duplicate User-agent groups nullify the Disallow",
+          evidence: "robots.txt has two User-agent: * blocks",
+          fix: "Merge the groups",
+          priority: "low",
+          confidence: "high",
+        },
+      ],
+      undefined,
+      { judgedOnly: true },
+    ),
+  ).toThrow("computed by seo-detect")
+})
+
+test("the detector's own output is not blocked by that rule", () => {
+  expect(
+    validateFindings([
+      {
+        rule: "TECH-ROBOTS-BLOCK",
+        issue: "robots.txt disallows Googlebot from crawling this page",
+        evidence: "robots.txt: the longest matching rule for /admin disallows it for Googlebot",
+        fix: "Allow /admin in robots.txt if this page should be crawled",
+        priority: "high",
+        confidence: "high",
+      },
+    ]),
+  ).toHaveLength(1)
+})
+
+test("specialists may still report judgment rules", () => {
+  expect(
+    validateFindings(
+      [
+        {
+          rule: "CONTENT-CLARITY",
+          issue: "Heading promises five items and six follow",
+          evidence: 'page-snapshot.md: H2 "Pięć problemów" followed by six H3 blocks',
+          fix: "Reword the heading or consolidate to five blocks",
+          priority: "medium",
+          confidence: "high",
+        },
+      ],
+      undefined,
+      { judgedOnly: true },
+    ),
+  ).toHaveLength(1)
+})
