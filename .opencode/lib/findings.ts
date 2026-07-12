@@ -297,17 +297,53 @@ export const detectorRules = new Set([
   "TECH-SOCIAL-PREVIEW",
 ])
 
+/** Levenshtein distance, for turning "TECH-JS-DEPENDENCY" into "did you mean TECH-JS-DEPENDENT". */
+function distance(a: string, b: string): number {
+  const row = Array.from({ length: b.length + 1 }, (_, i) => i)
+  for (let i = 1; i <= a.length; i++) {
+    let previous = row[0]++
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1
+      const next = Math.min(row[j] + 1, row[j - 1] + 1, previous + cost)
+      previous = row[j]
+      row[j] = next
+    }
+  }
+  return row[b.length]
+}
+
+/**
+ * The registry knows the right answer, so it should say it. Real audits produced
+ * `TECH-REDIRECT` for `TECH-REDIRECT-CHAIN` and `TECH-JS-DEPENDENCY` for `TECH-JS-DEPENDENT`,
+ * and each near-miss cost a full round trip because the error only said "not a known rule ID".
+ */
+function suggest(id: string): string {
+  const best = Object.keys(rules)
+    .map((known) => ({ known, d: distance(id.toUpperCase(), known) }))
+    .sort((a, b) => a.d - b.d)[0]
+  return best && best.d <= 6 ? ` Did you mean ${best.known}?` : ""
+}
+
 /**
  * Passed checks were an unguarded surface: nothing validated them, and a real audit invented
  * the rule ID `SCHEMA-FAQ-MATCH` there. Anything a report presents as a rule must be one.
  */
 export function validatePassedChecks(input: unknown): string[] {
   if (!Array.isArray(input)) throw new Error("Passed checks must be an array of rule IDs")
-  return input.map((value, index) => {
-    if (typeof value !== "string" || !rules[value])
-      throw new Error(`Passed check ${index} is not a known rule ID: ${JSON.stringify(value)}`)
-    return value
-  })
+
+  // Report every bad ID at once. Failing on the first one turned a four-typo payload into
+  // four round trips.
+  const problems = input.flatMap((value, index) =>
+    typeof value === "string" && rules[value]
+      ? []
+      : [
+          `Passed check ${index} is not a known rule ID: ${JSON.stringify(value)}.${
+            typeof value === "string" ? suggest(value) : ""
+          }`,
+        ],
+  )
+  if (problems.length) throw new Error(problems.join("\n"))
+  return input as string[]
 }
 
 export type ValidateOptions = {
@@ -322,38 +358,57 @@ export function validateFindings(
 ): Finding[] {
   if (!Array.isArray(input)) throw new Error("Findings payload must be an array")
 
+  // Every problem is collected and reported together. Throwing on the first one turned a
+  // payload with four independent mistakes into four round trips, and each trip the author
+  // guessed at which finding was meant — once rewriting a perfectly good one five times.
+  const problems: string[] = []
   const seen = new Set<string>()
-  return input.map((value, index) => {
+
+  const validated = input.map((value, index) => {
+    const fail = (message: string) => {
+      problems.push(message)
+      return null
+    }
+
     if (!value || typeof value !== "object" || Array.isArray(value))
-      throw new Error(`Finding ${index} must be an object`)
+      return fail(`Finding ${index} must be an object`)
 
     const finding = value as Record<string, unknown>
+    const rule = finding.rule as string
+    const policy = typeof rule === "string" ? rules[rule] : undefined
+    // The label names the rule even when the rule is bogus, so nobody has to count the array.
+    const at = `Finding ${index} (${typeof rule === "string" ? rule : "no rule"})`
+
+    if (!policy)
+      return fail(
+        `${at} has unknown rule.${typeof rule === "string" ? suggest(rule) : ""} Valid rules are listed in the reference files; a rule that is not in the registry does not exist.`,
+      )
+
     for (const field of requiredText) {
       if (typeof finding[field] !== "string" || !finding[field].trim())
-        throw new Error(`Finding ${index} requires non-empty ${field}`)
+        return fail(`${at} requires non-empty ${field}`)
     }
     for (const field of Object.keys(finding)) {
-      if (!allowedFields.has(field)) throw new Error(`Finding ${index} has unknown field ${field}`)
+      if (!allowedFields.has(field)) return fail(`${at} has unknown field ${field}`)
     }
-
-    const rule = finding.rule as string
-    const policy = rules[rule]
-    if (!policy) throw new Error(`Finding ${index} has unknown rule`)
     if (finding.category !== undefined && finding.category !== policy.category)
-      throw new Error(`Finding ${index} category conflicts with rule`)
-    // Errors from here on name the rule as well as the index: a real audit read "Finding 1"
-    // as the first finding, rewrote the wrong one five times, and never fixed the real problem.
-    const at = `Finding ${index} (${rule})`
+      return fail(`${at} category conflicts with rule (expected ${policy.category})`)
     if (options.judgedOnly && detectorRules.has(rule))
-      throw new Error(
+      return fail(
         `${at} is computed by seo-detect from the evidence and may not be judged by hand. Drop it; the detected finding is already in the report.`,
       )
     if (typeof finding.priority !== "string" || !priorities.includes(finding.priority as Finding["priority"]))
-      throw new Error(`${at} has invalid priority`)
+      return fail(
+        `${at} has invalid priority ${JSON.stringify(finding.priority)}. Use one of: ${priorities.join(", ")}.`,
+      )
     if (priorities.indexOf(finding.priority as Finding["priority"]) > priorities.indexOf(policy.max))
-      throw new Error(`${at} exceeds rule priority`)
+      return fail(
+        `${at} has priority "${finding.priority}" but this rule's ceiling is "${policy.max}". Lower it to "${policy.max}" or below, or use a rule whose ceiling fits the evidence.`,
+      )
     if (typeof finding.confidence !== "string" || !confidences.has(finding.confidence))
-      throw new Error(`${at} has invalid confidence`)
+      return fail(
+        `${at} has invalid confidence ${JSON.stringify(finding.confidence)}. Use one of: high, medium, low.`,
+      )
 
     // Authored impact is discarded, not merged. A supplied one is ignored on purpose:
     // the point is that no prose an author wrote can reach this field.
@@ -378,21 +433,23 @@ export function validateFindings(
     const unquote = (text: string) => text.replace(/"[^"]*"|'[^']*'|«[^»]*»|„[^”]*”/g, " ")
     const combined = `${normalized.issue} ${unquote(normalized.evidence)} ${normalized.fix}`
     if (rule !== "TECH-PERFORMANCE-MEASURED" && /\b(LCP|INP|CLS|Core Web Vitals)\b/i.test(combined))
-      throw new Error(`${at} makes unmeasured performance claim`)
+      return fail(`${at} makes unmeasured performance claim`)
     if (
       rule === "TECH-PERFORMANCE-MEASURED" &&
       (!/\b(LCP|INP|CLS)\b.{0,40}\d+(?:\.\d+)?/i.test(normalized.evidence) ||
         !/\b(CrUX|Lighthouse|PageSpeed|field data|lab data)\b/i.test(normalized.evidence))
     )
-      throw new Error(`${at} lacks measured performance evidence`)
+      return fail(
+        `${at} lacks measured performance evidence. The evidence field must name a metric (LCP, INP, or CLS) followed by its number, and the source it came from (CrUX, Lighthouse, PageSpeed, field data, or lab data). Example: 'page-performance.json: Lighthouse lab LCP 3376 ms, field data null'.`,
+      )
     if (
       rule !== "TECH-ROBOTS-BLOCK" &&
       /(robots meta|meta robots|robots tag)/i.test(normalized.issue) &&
       /(missing|not set|absent)/i.test(normalized.issue)
     )
-      throw new Error(`${at} treats default robots behavior as defect`)
+      return fail(`${at} treats default robots behavior as defect`)
     if (/\b(knowledge panel|rich result|rich snippet|local pack|map pack|SERP feature)/i.test(combined))
-      throw new Error(`${at} promises a search feature`)
+      return fail(`${at} promises a search feature`)
     // Bare "traffic" is not a claim: "low-traffic page" is the correct, required way to
     // explain an absent CrUX record, and the rule docs ask for exactly that. Only the
     // claim-shaped phrasings are banned.
@@ -401,24 +458,35 @@ export function validateFindings(
       /\b(organic|search|more|less|lost|lose|losing|drive|driving|gain|increase[ds]?|drop(?:ped)?|boost)\s+traffic\b/i.test(combined) ||
       /\btraffic\s+(loss|drop|gain|increase|growth)\b/i.test(combined)
     )
-      throw new Error(`${at} makes an unsupported ranking or traffic claim`)
+      return fail(`${at} makes an unsupported ranking or traffic claim`)
     if (/(keyword-optimized|primary keyword|keyword density)/i.test(combined))
-      throw new Error(`${at} contains keyword folklore`)
+      return fail(`${at} contains keyword folklore`)
     if (normalized.category === "content" && /(word count|\b\d+\s+words\b|thin content)/i.test(combined))
-      throw new Error(`${at} uses arbitrary content length evidence`)
+      return fail(`${at} uses arbitrary content length evidence`)
     if (
       rule === "SCHEMA-REQUIRED" &&
       /LocalBusiness/i.test(combined) &&
       /\b(telephone|openingHours|image|geo)\b/i.test(combined)
     )
-      throw new Error(`${at} treats recommended LocalBusiness property as required`)
+      return fail(`${at} treats recommended LocalBusiness property as required`)
 
-    validateFixDomains(normalized.fix, target)
+    try {
+      validateFixDomains(normalized.fix, target)
+    } catch (error) {
+      return fail(`${at} ${error instanceof Error ? error.message : String(error)}`)
+    }
 
     const fingerprint =
       `${normalized.issue}\n${normalized.evidence}\n${normalized.page ?? ""}`.toLowerCase()
-    if (seen.has(fingerprint)) throw new Error(`${at} duplicates an earlier finding`)
+    if (seen.has(fingerprint)) return fail(`${at} duplicates an earlier finding`)
     seen.add(fingerprint)
     return normalized
   })
+
+  if (problems.length)
+    throw new Error(
+      `${problems.length} finding(s) rejected. Fix every one below, then revalidate:\n` +
+        problems.map((problem) => `  - ${problem}`).join("\n"),
+    )
+  return validated as Finding[]
 }

@@ -17,7 +17,7 @@ Never read evidence from another domain's directory. Evidence collected for one 
 
 ## Discover
 
-1. Fetch `{origin}/robots.txt` with `webfetch` and save to `robots.txt`. Parse its `Sitemap:` directives.
+1. Call `seo-fetch-http` on the entry URL. It writes `page-http.json` and `robots.txt`. Read the saved `robots.txt` for its `Sitemap:` directives. Do not fetch robots.txt by hand.
 2. If a sitemap exists, fetch and parse it. Take up to 20 distinct page URLs from `loc` elements. Skip image, video, and news sitemaps.
 3. If no sitemap is reachable, collect the entry page first and sample up to 20 distinct internal URLs from its link list.
 4. Reject URLs outside the entry origin. Reject non-HTTP(S).
@@ -28,9 +28,9 @@ Call `seo-collect-pages` **once**, with the full list of URLs. It renders every 
 
 Do not spawn collector subagents and do not drive a browser by hand. A shared browser tab cannot collect two pages at once without risking evidence attributed to the wrong URL.
 
-Call `seo-fetch-http` for each URL and save to `site-pages/{index}/page-http.json`. This is the only source of status, headers, and redirect chains.
+Call `seo-fetch-http` for each remaining URL with `subdir: site-pages/{index}`. It writes `site-pages/{index}/page-http.json` itself — the only source of status, headers, and redirect chains. Never save an evidence file by hand from a tool result; the result is truncated and the file would be incomplete.
 
-Collect measured performance **once**, for the entry URL only: call `seo-pagespeed` and save to `page-performance.json`. PageSpeed Insights takes around 30 seconds per call, so per-page measurement across 20 pages is not viable. Cross-page speed comparison uses `TECH-PERFORMANCE-OUTLIER`, which is relative and needs no external measurement. If `GOOGLE_API_KEY` is unset, record a scope limit and continue.
+Collect measured performance **once**, for the entry URL only: call `seo-pagespeed`, which writes `page-performance.json`. PageSpeed Insights takes around 30 seconds per call, so per-page measurement across 20 pages is not viable. Cross-page speed comparison uses `TECH-PERFORMANCE-OUTLIER`, which is relative and needs no external measurement. If `GOOGLE_API_KEY` is unset, record a scope limit and continue.
 
 Build `site-summary.json` with, per page: `index`, `url`, `status`, `title`, `description`, `canonical`, `h1Count`, `headingCount`, `imageCount`, `linkCount`, `schemaTypes`, `ttfb`, `transferSize`. Add a `sitemap` section with URLs and `lastmod`, and a `performance` section with median TTFB, p75, max, and per-page outliers above 3× median. This lets specialists see the whole site without reading every evidence file.
 

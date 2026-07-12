@@ -17,15 +17,15 @@ Every path below is relative to the returned `evidence` directory. Never read ev
 
 ## Collect
 
-Three tool calls, in any order. Each validates the URL independently; there is no way to reach a private address through them.
+Three tool calls, each taking the `evidence` path from `seo-start-run`. Every one validates the URL independently, and **every one writes its own evidence files**. You never save evidence by hand: these artifacts run to hundreds of kilobytes, a tool result that size is truncated before you see it, and a file you then "save" from a truncated result is a file with a hole in it.
 
-1. `seo-fetch-http` — save to `page-http.json`. The only source of response status, response headers, and the redirect chain. `X-Robots-Tag` and a `Link: rel="canonical"` header live here and nowhere else; a rendered DOM cannot show them. It also returns the server-sent raw HTML, whose `raw.textLength` is the baseline for judging JavaScript dependency.
+1. `seo-fetch-http` — writes `page-http.json` and `robots.txt`. The only source of response status, response headers, and the redirect chain. `X-Robots-Tag` and a `Link: rel="canonical"` header live here and nowhere else; a rendered DOM cannot show them. It also stores the server-sent raw HTML, whose `raw.textLength` is the baseline for judging JavaScript dependency. Do not fetch robots.txt separately.
 
 2. `seo-collect-pages` with a single URL — renders the page in an isolated browser context and writes `page-evidence.json`, `page-snapshot.md`, `page-console.txt`, and `page-network.txt`. Do not drive a browser by hand and do not re-render the page afterwards.
 
-3. `seo-pagespeed` — save to `page-performance.json`. If it fails because `GOOGLE_API_KEY` is unset, record a scope limit and continue; every other check still runs and only `TECH-PERFORMANCE-MEASURED` becomes unavailable. Low-traffic pages have no CrUX record, so `field` is `null` — that is normal, not a defect, and lab data must be labelled as lab.
+3. `seo-pagespeed` — writes `page-performance.json`. If it fails because `GOOGLE_API_KEY` is unset, record a scope limit and continue; every other check still runs and only `TECH-PERFORMANCE-MEASURED` becomes unavailable. Low-traffic pages have no CrUX record, so `field` is `null` — normal, not a defect, and lab data must be labelled as lab.
 
-Also fetch `{origin}/robots.txt` with `webfetch` and save it to `robots.txt`. An absent robots.txt is default-allow, not a defect.
+Each returns a short summary. Trust the files on disk, not the summary, and never reconstruct an evidence file from a tool result.
 
 Structured-data collection covers JSON-LD only. Report Microdata and RDFa as outside scope.
 

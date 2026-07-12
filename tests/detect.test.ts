@@ -227,3 +227,19 @@ test("a 3xx link is not broken", () => {
   })
   expect(found.filter((f) => f.rule === "TECH-LINK-BROKEN")).toEqual([])
 })
+
+test("anchor conflicts collapse into one finding, not one per anchor", () => {
+  // A real site with a "read more" link on every card produced twelve separate low-priority
+  // findings and buried the real ones.
+  const conflicts = Array.from({ length: 12 }, (_, i) => ({
+    text: `label ${i}`,
+    urls: [`https://example.com/a${i}`, `https://example.com/b${i}`],
+  }))
+  const found = detectFindings(
+    evidence({ links: { anchorQuality: { genericAnchors: [], anchorConflicts: conflicts } } }),
+    http(),
+  )
+  const raised = found.filter((f) => f.rule === "TECH-LINK-ANCHOR-CONFLICT")
+  expect(raised).toHaveLength(1)
+  expect(raised[0].issue).toContain("12 anchor text(s)")
+})

@@ -272,15 +272,22 @@ export function detectFindings(
       confidence: "high",
     })
 
-  for (const conflict of anchorConflicts)
+  // One finding for the whole page, not one per anchor. A site with a "read more" link on
+  // every card produced a dozen separate low-priority findings and buried the real ones.
+  if (anchorConflicts.length) {
+    const worst = [...anchorConflicts].sort((a, b) => b.urls.length - a.urls.length)
     add({
       rule: "TECH-LINK-ANCHOR-CONFLICT",
-      issue: `Anchor text "${conflict.text}" points to ${conflict.urls.length} different destinations`,
-      evidence: `page-evidence.json: "${conflict.text}" -> ${conflict.urls.join(", ")}`,
+      issue: `${anchorConflicts.length} anchor text(s) each point to several different destinations`,
+      evidence: `page-evidence.json: ${worst
+        .slice(0, 5)
+        .map((c) => `"${c.text}" -> ${c.urls.length} destinations`)
+        .join("; ")}${worst.length > 5 ? `, and ${worst.length - 5} more` : ""}`,
       fix: "Give each destination anchor text that distinguishes it from the others",
       priority: "low",
       confidence: "high",
     })
+  }
 
   // --- hreflang -------------------------------------------------------------
   if (evidence.hreflang.tags.length && !evidence.hreflang.hasSelfRef)

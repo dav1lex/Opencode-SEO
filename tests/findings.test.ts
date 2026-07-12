@@ -341,3 +341,47 @@ test("specialists may still report judgment rules", () => {
     ),
   ).toHaveLength(1)
 })
+
+test("reports every problem at once instead of one per round trip", () => {
+  // A real audit hit four independent mistakes and needed four validate calls to find them.
+  try {
+    validateFindings([
+      { rule: "SCHEMA-ABSENT", issue: "a", evidence: "b", fix: "c", priority: "low", confidence: "high" },
+      { rule: "TECH-HEADING-CLARITY", issue: "a", evidence: "b", fix: "c", priority: "critical", confidence: "high" },
+    ])
+    throw new Error("should have thrown")
+  } catch (error) {
+    const message = (error as Error).message
+    expect(message).toContain("2 finding(s) rejected")
+    expect(message).toContain("SCHEMA-ABSENT")
+    expect(message).toContain("TECH-HEADING-CLARITY")
+  }
+})
+
+test("a near-miss rule ID gets a suggestion", () => {
+  expect(() => validatePassedChecks(["TECH-JS-DEPENDENCY"])).toThrow("Did you mean TECH-JS-DEPENDENT")
+  expect(() => validatePassedChecks(["TECH-REDIRECT"])).toThrow("Did you mean TECH-REDIRECT-CHAIN")
+})
+
+test("unknown-rule errors name the bad rule, not just an index", () => {
+  expect(() =>
+    validateFindings([
+      { rule: "MADE-UP-RULE", issue: "a", evidence: "b", fix: "c", priority: "low", confidence: "high" },
+    ]),
+  ).toThrow("Finding 0 (MADE-UP-RULE)")
+})
+
+test("the performance error says what shape the evidence must take", () => {
+  expect(() =>
+    validateFindings([
+      {
+        rule: "TECH-PERFORMANCE-MEASURED",
+        issue: "slow",
+        evidence: "PSI says it is slow",
+        fix: "speed it up",
+        priority: "high",
+        confidence: "high",
+      },
+    ]),
+  ).toThrow("must name a metric (LCP, INP, or CLS) followed by its number")
+})
