@@ -26,6 +26,8 @@ Check:
 - authorship, sourcing, dates, contact, and transparency where relevant
 - concise passages, definitions, facts, and structure suitable for citation
 - repetitive, vague, unsupported, or templated claims
+- one claim, one rule: an unsupported claim is `CONTENT-CLAIM-SUPPORT`. Do not also raise `CONTENT-CITATION` for the same claim; that rule is about whether a passage can be quoted, not whether it is true
+- malformed words: several words broken the same way (duplicated suffixes, spliced fragments, a term corrupted mid-word) are a template or translation-plugin fault. Report the mechanism, not a proofread. A proofread does not fix a plugin that regenerates the damage on every render
 
 Do not infer author reputation, backlinks, traffic, rankings, factual accuracy, keyword demand, or competitor norms without external evidence.
 
