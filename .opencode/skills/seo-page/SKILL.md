@@ -9,7 +9,7 @@ Audit one public HTTP or HTTPS page. Do not crawl the site.
 
 ## Safety gate
 
-Before navigation, reject credentials in URLs, non-HTTP schemes, localhost names, loopback addresses, link-local addresses, and private-network IPs. Do not bypass TLS errors. Stop on redirects to rejected targets.
+Before navigation, call `seo-validate-url` and navigate only to its returned URL. Do not bypass TLS errors. The navigation hook applies the same validation to direct Playwright navigation calls.
 
 ## Collect once
 
