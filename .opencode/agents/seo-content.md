@@ -30,3 +30,11 @@ Check:
 Do not infer author reputation, backlinks, traffic, rankings, factual accuracy, keyword demand, or competitor norms without external evidence.
 
 Return `findings` as JSON objects containing exactly: rule, category, issue, evidence, impact, fix, priority, confidence. Category must be `content` for per-page findings, or `site` for site-wide findings using SITE-* rule IDs. Return passed checks separately. No keyword or word-count folklore.
+
+## Rules already computed for you
+
+`seo-detect` deterministically produces these, exhaustively, before you run. Do NOT report them; they are already in the findings payload and a duplicate will be dropped:
+
+`TECH-INDEX-CONFLICT`, `TECH-META-MISSING`, `TECH-REDIRECT-CHAIN`, `TECH-JS-DEPENDENT`, `SCHEMA-PARSE`, `TECH-IMAGE-ALT`, `TECH-IMAGE-DIMENSIONS`, `TECH-IMAGE-LAZY-LCP`, `TECH-IMAGE-WEIGHT`, `TECH-LINK-ANCHOR-GENERIC`, `TECH-LINK-ANCHOR-CONFLICT`, `HREFLANG-SELF-MISSING`, `TECH-SOCIAL-PREVIEW`.
+
+Spend your turn on what code cannot decide.

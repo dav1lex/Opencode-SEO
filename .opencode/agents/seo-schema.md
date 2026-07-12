@@ -34,3 +34,11 @@ Prefer JSON-LD. Never promise rich-result eligibility. Do not recommend deprecat
 Generate replacement JSON-LD only when user asks or when a precise fix needs a short example.
 
 Return `findings` as JSON objects containing exactly: rule, category, issue, evidence, impact, fix, priority, confidence. Category must be `schema` for per-page findings, or `site` for site-wide findings using SITE-* rule IDs. Return passed checks separately. Distinguish required properties from optional enhancements.
+
+## Rules already computed for you
+
+`seo-detect` deterministically produces these, exhaustively, before you run. Do NOT report them; they are already in the findings payload and a duplicate will be dropped:
+
+`TECH-INDEX-CONFLICT`, `TECH-META-MISSING`, `TECH-REDIRECT-CHAIN`, `TECH-JS-DEPENDENT`, `SCHEMA-PARSE`, `TECH-IMAGE-ALT`, `TECH-IMAGE-DIMENSIONS`, `TECH-IMAGE-LAZY-LCP`, `TECH-IMAGE-WEIGHT`, `TECH-LINK-ANCHOR-GENERIC`, `TECH-LINK-ANCHOR-CONFLICT`, `HREFLANG-SELF-MISSING`, `TECH-SOCIAL-PREVIEW`.
+
+Spend your turn on what code cannot decide.
