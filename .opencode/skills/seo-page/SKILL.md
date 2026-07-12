@@ -15,25 +15,37 @@ Before navigation, call `seo-validate-url` and navigate only to its returned URL
 
 ## Collect once
 
-Use Playwright MCP as the source of rendered-page evidence:
+Evidence comes from three sources: the HTTP response, the rendered DOM, and measured performance. Collect all three before delegating.
 
-1. Navigate to the target and wait for the document to settle.
-2. If the page returned 200, fetch `{origin}/robots.txt` using `webfetch` and save to `.playwright-mcp/robots.txt`.
-3. Read `collect-page-evidence.js` from this skill directory and pass its function expression unchanged to Playwright's browser evaluation tool.
-3. Use its structured result as shared evidence for metadata, headings, classified links, computed image layout, visible and hidden DOM text, navigation timing, and structured data.
-4. Save evaluation result to `.playwright-mcp/page-evidence.json` and accessibility snapshot to `.playwright-mcp/page-snapshot.md`; never write audit artifacts in repository root.
-5. Save browser console output to `.playwright-mcp/page-console.txt` and network request output to `.playwright-mcp/page-network.txt` before delegation. Missing output becomes an explicit scope limit.
-6. Take a screenshot only when visual evidence helps a finding; save it under `.playwright-mcp/`.
+### HTTP layer
+
+1. Call `seo-fetch-http` with the validated target. Save its result to `.playwright-mcp/page-http.json`.
+2. This is the only source for response status, response headers, and the redirect chain. `X-Robots-Tag` and `Link: rel="canonical"` are visible here and nowhere else — a rendered DOM cannot show them.
+3. It also returns the server-sent raw HTML. Compare `raw.textLength` against the rendered `domText` length to judge JavaScript dependency; do not infer it any other way.
+
+### Rendered DOM
+
+4. Navigate to the target via Playwright MCP and wait for the document to settle.
+5. Fetch `{origin}/robots.txt` using `webfetch` and save to `.playwright-mcp/robots.txt`.
+6. Read `collect-page-evidence.js` from this skill directory and pass its function expression unchanged to Playwright's browser evaluation tool. Save the result to `.playwright-mcp/page-evidence.json` and the accessibility snapshot to `.playwright-mcp/page-snapshot.md`. Never write audit artifacts in the repository root.
+7. Save browser console output to `.playwright-mcp/page-console.txt` and network request output to `.playwright-mcp/page-network.txt` before delegation. Missing output becomes an explicit scope limit.
+8. Take a screenshot only when visual evidence helps a finding; save it under `.playwright-mcp/`.
+
+### Measured performance
+
+9. Call `seo-pagespeed` with the validated target. Save its result to `.playwright-mcp/page-performance.json`.
+10. If it fails because `GOOGLE_API_KEY` is unset, record a scope limit and continue. Every other check still runs; only `TECH-PERFORMANCE-MEASURED` is unavailable.
+11. Low-traffic pages have no CrUX record, so `field` is `null`. That is normal, not a defect. Lab data alone is still valid evidence, but must be labelled as lab.
 
 Current structured-data collection covers JSON-LD only. Report Microdata and RDFa as outside scope.
 
-Do not call Core Web Vitals good or bad without measured lab or field data. Source-based concerns belong in scope limits, not findings.
+`page-performance.json` is the only sanctioned source for Core Web Vitals. Navigation timing is not CWV evidence. Without that file, never call LCP, INP, or CLS good or bad.
 
 ## Delegate
 
-Pass the same evidence files to these subagents in parallel. Tell each agent to read `.playwright-mcp/page-evidence.json`, `.playwright-mcp/page-snapshot.md`, `.playwright-mcp/page-console.txt`, `.playwright-mcp/page-network.txt`, and `.playwright-mcp/robots.txt`; do not create different evidence summaries:
+Pass the same evidence files to these subagents in parallel. Tell each agent to read `.playwright-mcp/page-http.json`, `.playwright-mcp/page-evidence.json`, `.playwright-mcp/page-performance.json`, `.playwright-mcp/page-snapshot.md`, `.playwright-mcp/page-console.txt`, `.playwright-mcp/page-network.txt`, and `.playwright-mcp/robots.txt`; do not create different evidence summaries:
 
-- `seo-technical`: crawl/index directives, metadata, rendering, links, images, mobile basics, and measured performance failures when measurement exists.
+- `seo-technical`: crawl/index directives including response headers, redirect chain, metadata, rendering and JavaScript dependency, links, images, mobile basics, and measured performance failures when measurement exists.
 - `seo-content`: intent match, hierarchy, clarity, depth, trust signals, and citation readiness.
 - `seo-schema`: detected structured data, syntax and visible-content consistency, supported opportunities.
 

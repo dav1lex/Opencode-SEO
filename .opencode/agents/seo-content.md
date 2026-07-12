@@ -5,13 +5,17 @@ permission:
   "*": deny
   read:
     "*": deny
+    ".playwright-mcp/page-http.json": allow
     ".playwright-mcp/page-evidence.json": allow
+    ".playwright-mcp/page-performance.json": allow
     ".playwright-mcp/page-snapshot.md": allow
     ".playwright-mcp/page-console.txt": allow
     ".playwright-mcp/page-network.txt": allow
     ".playwright-mcp/robots.txt": allow
     ".playwright-mcp/site-summary.json": allow
+    ".playwright-mcp/site-pages/*/page-http.json": allow
     ".playwright-mcp/site-pages/*/page-evidence.json": allow
+    ".playwright-mcp/site-pages/*/page-performance.json": allow
     ".playwright-mcp/site-pages/*/page-snapshot.md": allow
     ".playwright-mcp/site-pages/*/page-console.txt": allow
     ".playwright-mcp/site-pages/*/page-network.txt": allow
@@ -38,4 +42,4 @@ Check:
 
 Do not infer author reputation, backlinks, traffic, rankings, factual accuracy, keyword demand, or competitor norms without external evidence.
 
-Return `findings` as JSON objects containing exactly: rule, category, issue, evidence, impact, fix, priority, confidence. Category must be `content`. Return passed checks separately. No keyword or word-count folklore.
+Return `findings` as JSON objects containing exactly: rule, category, issue, evidence, impact, fix, priority, confidence. Category must be `content` for per-page findings, or `site` for site-wide findings using SITE-* rule IDs. Return passed checks separately. No keyword or word-count folklore.

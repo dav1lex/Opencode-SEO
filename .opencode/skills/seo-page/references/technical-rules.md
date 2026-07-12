@@ -14,8 +14,14 @@
 - `TECH-META-MEANINGLESS`: Title or description provides no useful descriptive content (e.g., "Home", "Untitled", empty, identical to domain name). Medium maximum. Length alone is not meaningfulness. Default values injected by a CMS count as meaningless.
 - `TECH-ROBOTS-BLOCK`: robots.txt blocks the audited page or critical resources from crawling. High maximum. Absent robots.txt is default allow, not a defect.
 - `TECH-PERFORMANCE-OUTLIER`: A page has TTFB, transfer size, or decoded body size significantly higher (>3×) than the site median. Medium maximum. Evidence must include the outlier value and median.
+- `TECH-REDIRECT-CHAIN`: Collected redirect chain has more than one hop, or crosses hostname or protocol before resolving. Medium maximum. Evidence must list each hop and status. A single HTTP-to-HTTPS or trailing-slash hop is not a defect.
+- `TECH-JS-DEPENDENT`: Server HTML carries little or no main content, and the content appears only after JavaScript execution. Medium maximum. Evidence must compare collected raw HTML text length against rendered DOM text length. Rendering is supported but delayed and budgeted; report the dependency, never claim the page will not be indexed.
 - `HREFLANG-SELF-MISSING`: Page has hreflang tags but omits a self-referencing entry or `x-default`. Medium maximum. Without self-reference, language targeting is incomplete.
 - `HREFLANG-RETURN-MISSING`: A hreflang target page does not link back to the source page (missing return tag). Medium maximum. Requires multi-page evidence.
 - `HREFLANG-CANONICAL-MISMATCH`: Hreflang URL points to a page whose canonical differs from the referenced URL. Medium maximum. Requires multi-page evidence.
 
-Passed checks may mention HTTP status, rendered content, metadata, social cards, language, and console state. Do not convert defaults or unmeasured risks into findings.
+Passed checks may mention HTTP status, response headers, redirect chain, rendered content, metadata, social cards, language, and console state. Do not convert defaults or unmeasured risks into findings.
+
+`TECH-INDEX-CONFLICT` covers an `X-Robots-Tag` response header carrying `noindex` or `none`; `TECH-CANON-CONFLICT` covers a `Link: rel="canonical"` response header that disagrees with the page. Both live in `page-http.json`. A response header outranks the equivalent meta tag when the two disagree; say so in evidence.
+
+`TECH-PERFORMANCE-MEASURED` accepts only `page-performance.json` (PageSpeed Insights). Field data is CrUX p75 from real Chrome users; lab data is Lighthouse. Low-traffic pages have no field data and `field` is `null` — that is not a defect, and lab data alone must be labelled as lab.

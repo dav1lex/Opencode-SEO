@@ -5,13 +5,17 @@ permission:
   "*": deny
   read:
     "*": deny
+    ".playwright-mcp/page-http.json": allow
     ".playwright-mcp/page-evidence.json": allow
+    ".playwright-mcp/page-performance.json": allow
     ".playwright-mcp/page-snapshot.md": allow
     ".playwright-mcp/page-console.txt": allow
     ".playwright-mcp/page-network.txt": allow
     ".playwright-mcp/robots.txt": allow
     ".playwright-mcp/site-summary.json": allow
+    ".playwright-mcp/site-pages/*/page-http.json": allow
     ".playwright-mcp/site-pages/*/page-evidence.json": allow
+    ".playwright-mcp/site-pages/*/page-performance.json": allow
     ".playwright-mcp/site-pages/*/page-snapshot.md": allow
     ".playwright-mcp/site-pages/*/page-console.txt": allow
     ".playwright-mcp/site-pages/*/page-network.txt": allow
@@ -41,4 +45,4 @@ Prefer JSON-LD. Never promise rich-result eligibility. Do not recommend deprecat
 
 Generate replacement JSON-LD only when user asks or when a precise fix needs a short example.
 
-Return `findings` as JSON objects containing exactly: rule, category, issue, evidence, impact, fix, priority, confidence. Category must be `schema`. Return passed checks separately. Distinguish required properties from optional enhancements.
+Return `findings` as JSON objects containing exactly: rule, category, issue, evidence, impact, fix, priority, confidence. Category must be `schema` for per-page findings, or `site` for site-wide findings using SITE-* rule IDs. Return passed checks separately. Distinguish required properties from optional enhancements.

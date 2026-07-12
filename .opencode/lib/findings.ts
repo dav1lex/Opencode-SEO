@@ -37,6 +37,8 @@ export const rules = {
   "SITE-SITEMAP-ORPHAN": ["site", "high"],
   "SITE-SITEMAP-STALE": ["site", "low"],
   "TECH-PERFORMANCE-OUTLIER": ["technical", "medium"],
+  "TECH-REDIRECT-CHAIN": ["technical", "medium"],
+  "TECH-JS-DEPENDENT": ["technical", "medium"],
   "SCHEMA-CROSS-PAGE-CONFLICT": ["schema", "high"],
   "SCHEMA-MISSING-CLASS": ["schema", "low"],
 } as const
@@ -50,13 +52,20 @@ type Finding = {
   fix: string
   priority: (typeof priorities)[number]
   confidence: string
+  page?: string
+  prevalence?: unknown
 }
 
 function validateFixDomains(fix: string, target?: string) {
   if (!target) return
-  const targetHost = new URL(target).hostname
+  let base: URL
+  try {
+    base = new URL(target)
+  } catch {
+    throw new Error("Validator target must be a valid absolute URL")
+  }
   for (const match of fix.matchAll(/\b(?:https?:)?\/\/[^\s'"`<>]+/gi)) {
-    if (new URL(match[0], target).hostname !== targetHost)
+    if (new URL(match[0], base).hostname !== base.hostname)
       throw new Error("Finding fix changes audited hostname")
   }
 }
@@ -105,7 +114,7 @@ export function validateFindings(input: unknown, target?: string): Finding[] {
         !/\b(CrUX|Lighthouse|PageSpeed|field data|lab data)\b/i.test(normalized.evidence))
     )
       throw new Error(`Finding ${index} lacks measured performance evidence`)
-    if (/robots/i.test(normalized.issue) && /(missing|not set|absent)/i.test(normalized.issue))
+    if (rule !== "TECH-ROBOTS-BLOCK" && /(robots meta|meta robots|robots tag)/i.test(normalized.issue) && /(missing|not set|absent)/i.test(normalized.issue))
       throw new Error(`Finding ${index} treats default robots behavior as defect`)
     if (/FAQ/i.test(combined) && /(eligible|eligibility|trigger).{0,30}rich result/i.test(combined))
       throw new Error(`Finding ${index} contains retired FAQ rich-result claim`)
@@ -124,7 +133,8 @@ export function validateFindings(input: unknown, target?: string): Finding[] {
 
     validateFixDomains(normalized.fix, target)
 
-    const fingerprint = `${normalized.issue.toLowerCase()}\n${normalized.evidence.toLowerCase()}`
+    const fingerprint =
+      `${normalized.issue}\n${normalized.evidence}\n${normalized.page ?? ""}`.toLowerCase()
     if (seen.has(fingerprint)) throw new Error(`Finding ${index} duplicates an earlier finding`)
     seen.add(fingerprint)
     return normalized

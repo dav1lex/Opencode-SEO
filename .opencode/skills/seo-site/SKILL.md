@@ -25,11 +25,11 @@ Each collector agent will:
 1. Navigate to its URL and wait for the page to settle.
 2. Run the evidence collection script from `.opencode/skills/seo-page/collect-page-evidence.js`.
 3. Save evidence to `.playwright-mcp/site-pages/{page-index}/page-evidence.json` and snapshot to `.playwright-mcp/site-pages/{page-index}/page-snapshot.md`.
-4. Return `{ url, status, title, wordCount, index }`.
+4. Return `{ url, status, title, index }`.
 
 For the first page only (index 0), also collect console output to `.playwright-mcp/site-pages/0/page-console.txt` and network output to `.playwright-mcp/site-pages/0/page-network.txt` before spawning collectors for remaining pages.
 
-After collection, build `.playwright-mcp/site-summary.json` containing per-page: `index`, `url`, `status`, `title`, `description`, `canonical`, `h1Count`, `headingCount`, `imageCount`, `linkCount`, `schemaTypes`, `wordCount`, `ttfb`, `transferSize`. Add `sitemap` section with URLs and `lastmod` parsed from the sitemap. Add `performance` section with median TTFB, p75, max, and per-page outliers (>3× median).
+After collection, build `.playwright-mcp/site-summary.json` containing per-page: `index`, `url`, `status`, `title`, `description`, `canonical`, `h1Count`, `headingCount`, `imageCount`, `linkCount`, `schemaTypes`, `ttfb`, `transferSize`. Add `sitemap` section with URLs and `lastmod` parsed from the sitemap. Add `performance` section with median TTFB, p75, max, and per-page outliers (>3× median).
 
 This gives specialists a quick overview without reading every evidence file.
 

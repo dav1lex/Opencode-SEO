@@ -5,13 +5,17 @@ permission:
   "*": deny
   read:
     "*": deny
+    ".playwright-mcp/page-http.json": allow
     ".playwright-mcp/page-evidence.json": allow
+    ".playwright-mcp/page-performance.json": allow
     ".playwright-mcp/page-snapshot.md": allow
     ".playwright-mcp/page-console.txt": allow
     ".playwright-mcp/page-network.txt": allow
     ".playwright-mcp/robots.txt": allow
     ".playwright-mcp/site-summary.json": allow
+    ".playwright-mcp/site-pages/*/page-http.json": allow
     ".playwright-mcp/site-pages/*/page-evidence.json": allow
+    ".playwright-mcp/site-pages/*/page-performance.json": allow
     ".playwright-mcp/site-pages/*/page-snapshot.md": allow
     ".playwright-mcp/site-pages/*/page-console.txt": allow
     ".playwright-mcp/site-pages/*/page-network.txt": allow
@@ -29,11 +33,13 @@ Check:
 
 - title, description, canonical, robots, language, and viewport
 - heading structure and link behavior including anchor text quality and conflicts
-- indexability conflicts visible in page metadata, response evidence, or robots.txt
+- indexability conflicts visible in page metadata, response headers, or robots.txt. `page-http.json` carries `indexing.xRobotsTag` and `indexing.linkHeader`; an `X-Robots-Tag` of `noindex` or `none` is a `TECH-INDEX-CONFLICT` even when the meta robots tag looks fine, because the header wins
+- redirect chain from `page-http.json`: more than one hop, or a hop crossing hostname or protocol, is `TECH-REDIRECT-CHAIN`. A single HTTP-to-HTTPS or trailing-slash hop is normal and not a finding
+- JavaScript dependency: compare `raw.textLength` in `page-http.json` against `domText` length in `page-evidence.json`. A near-empty server response that renders full content is `TECH-JS-DEPENDENT`. Report the dependency; never claim the page will not be indexed
 - rendered content availability and obvious client-rendering failures
 - image alt text and explicit dimensions
 - mobile and accessibility basics affecting discovery or use
-- measured performance evidence only
+- measured performance: `page-performance.json` is the only sanctioned source. Cite the metric, the number, and whether it is CrUX field data or Lighthouse lab data. When `field` is `null` the page has too little traffic for a CrUX record — that is not a defect. When the file is absent, make no performance claim at all
 - performance outlier detection: compare TTFB, transfer size, and decoded body size across pages; flag values >3× site median
 - console or response failures that affect rendered content
 - metadata meaningfulness: flag titles or descriptions that contain no useful content
@@ -42,4 +48,4 @@ Check:
 
 Do not audit sitemaps, site-wide duplication, orphan status, or redirect chains from single-page evidence. robots.txt collection must precede analysis; missing robots.txt is not a defect.
 
-Return `findings` as JSON objects containing exactly: rule, category, issue, evidence, impact, fix, priority, confidence. Category must be `technical`. Return passed checks separately. No markdown SEO folklore.
+Return `findings` as JSON objects containing exactly: rule, category, issue, evidence, impact, fix, priority, confidence. Category must be `technical` for per-page findings, or `site` for site-wide findings using SITE-* rule IDs. Return passed checks separately. No markdown SEO folklore.

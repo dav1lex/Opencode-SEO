@@ -105,3 +105,46 @@ test("rejects optional LocalBusiness fields as required", () => {
     ]),
   ).toThrow("recommended LocalBusiness")
 })
+
+test("two findings identical except for page both survive dedup", () => {
+  const finding1 = {
+    ...finding,
+    page: "https://example.com/page1",
+  }
+  const finding2 = {
+    ...finding,
+    page: "https://example.com/page2",
+  }
+  expect(validateFindings([finding1, finding2])).toHaveLength(2)
+})
+
+test("TECH-ROBOTS-BLOCK finding about robots.txt Sitemap directive is accepted", () => {
+  const result = validateFindings([
+    {
+      ...finding,
+      rule: "TECH-ROBOTS-BLOCK",
+      category: "technical",
+      issue: "robots.txt is missing a Sitemap directive",
+      evidence: "No Sitemap: line found",
+      priority: "high",
+    },
+  ])
+  expect(result).toHaveLength(1)
+})
+
+test("non-TECH-ROBOTS-BLOCK finding saying Robots meta is missing is rejected", () => {
+  expect(() =>
+    validateFindings([
+      {
+        ...finding,
+        issue: "Robots meta is missing",
+      },
+    ]),
+  ).toThrow("default robots behavior")
+})
+
+test("invalid target URL yields clear error message", () => {
+  expect(() => validateFindings([finding], "not-a-url")).toThrow(
+    "Validator target must be a valid absolute URL",
+  )
+})
