@@ -34,7 +34,7 @@ test("rejects priority above rule maximum", () => {
     validateFindings([
       { ...finding, rule: "TECH-HEADING-CLARITY", priority: "high" },
     ]),
-  ).toThrow("exceeds rule priority")
+  ).toThrow('ceiling is "low"')
 })
 
 test("rejects unmeasured performance claims", () => {
@@ -121,7 +121,7 @@ test("accepts passed checks that are all known rules", () => {
 test("rejects missing robots meta as a defect", () => {
   expect(() =>
     validateFindings([{ ...finding, issue: "Robots meta is missing" }]),
-  ).toThrow("default robots behavior")
+  ).toThrow("missing robots meta tag as a defect")
 })
 
 test("rejects arbitrary word-count findings", () => {
@@ -187,7 +187,7 @@ test("non-TECH-ROBOTS-BLOCK finding saying Robots meta is missing is rejected", 
         issue: "Robots meta is missing",
       },
     ]),
-  ).toThrow("default robots behavior")
+  ).toThrow("missing robots meta tag as a defect")
 })
 
 test("invalid target URL yields clear error message", () => {
@@ -257,7 +257,7 @@ test("validation errors name the rule, not just a zero-based index", () => {
       finding,
       { ...finding, rule: "TECH-HEADING-CLARITY", priority: "critical" },
     ]),
-  ).toThrow("Finding 1 (TECH-HEADING-CLARITY) exceeds rule priority")
+  ).toThrow('Finding 1 (TECH-HEADING-CLARITY) has priority "critical"')
 })
 
 test("quoting the page's own ranking claim is the finding, not a violation", () => {

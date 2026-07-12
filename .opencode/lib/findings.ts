@@ -362,7 +362,7 @@ export function validateFindings(
   // payload with four independent mistakes into four round trips, and each trip the author
   // guessed at which finding was meant — once rewriting a perfectly good one five times.
   const problems: string[] = []
-  const seen = new Set<string>()
+  const seen = new Map<string, number>()
 
   const validated = input.map((value, index) => {
     const fail = (message: string) => {
@@ -432,8 +432,18 @@ export function validateFindings(
     // inverse of the intent. So quoted text is stripped before the guards run.
     const unquote = (text: string) => text.replace(/"[^"]*"|'[^']*'|«[^»]*»|„[^”]*”/g, " ")
     const combined = `${normalized.issue} ${unquote(normalized.evidence)} ${normalized.fix}`
-    if (rule !== "TECH-PERFORMANCE-MEASURED" && /\b(LCP|INP|CLS|Core Web Vitals)\b/i.test(combined))
-      return fail(`${at} makes unmeasured performance claim`)
+
+    // Every guard names the exact phrase that tripped it. Without that, an author cannot
+    // see what to change: one spent five turns rewriting a finding because the message said
+    // "unsupported ranking or traffic claim" and never revealed the word was "low-traffic".
+    const trips = (pattern: RegExp, text = combined) => text.match(pattern)?.[0]
+    const because = (phrase: string) => `The phrase "${phrase.trim()}" is what tripped this.`
+
+    const cwv = rule !== "TECH-PERFORMANCE-MEASURED" && trips(/\b(LCP|INP|CLS|Core Web Vitals)\b/i)
+    if (cwv)
+      return fail(
+        `${at} makes an unmeasured performance claim. ${because(cwv)} Only TECH-PERFORMANCE-MEASURED, backed by page-performance.json, may name a Core Web Vital. Remove the term, or move the point into a TECH-PERFORMANCE-MEASURED finding with the measurement.`,
+      )
     if (
       rule === "TECH-PERFORMANCE-MEASURED" &&
       (!/\b(LCP|INP|CLS)\b.{0,40}\d+(?:\.\d+)?/i.test(normalized.evidence) ||
@@ -447,28 +457,49 @@ export function validateFindings(
       /(robots meta|meta robots|robots tag)/i.test(normalized.issue) &&
       /(missing|not set|absent)/i.test(normalized.issue)
     )
-      return fail(`${at} treats default robots behavior as defect`)
-    if (/\b(knowledge panel|rich result|rich snippet|local pack|map pack|SERP feature)/i.test(combined))
-      return fail(`${at} promises a search feature`)
+      return fail(
+        `${at} treats a missing robots meta tag as a defect. Absent robots metadata means default index,follow — that is correct behaviour, not a problem. Drop this finding.`,
+      )
+
+    const feature = trips(/\b(knowledge panel|rich result|rich snippet|local pack|map pack|SERP feature)[a-z]*/i)
+    if (feature)
+      return fail(
+        `${at} promises a search feature. ${because(feature)} You have no evidence about what Google will display. State the defect and its effect on the page, not on a SERP feature.`,
+      )
+
     // Bare "traffic" is not a claim: "low-traffic page" is the correct, required way to
     // explain an absent CrUX record, and the rule docs ask for exactly that. Only the
     // claim-shaped phrasings are banned.
-    if (
-      /\b(rank|ranks|ranking|rankings|CTR|click-through rate)\b/i.test(combined) ||
-      /\b(organic|search|more|less|lost|lose|losing|drive|driving|gain|increase[ds]?|drop(?:ped)?|boost)\s+traffic\b/i.test(combined) ||
-      /\btraffic\s+(loss|drop|gain|increase|growth)\b/i.test(combined)
-    )
-      return fail(`${at} makes an unsupported ranking or traffic claim`)
-    if (/(keyword-optimized|primary keyword|keyword density)/i.test(combined))
-      return fail(`${at} contains keyword folklore`)
-    if (normalized.category === "content" && /(word count|\b\d+\s+words\b|thin content)/i.test(combined))
-      return fail(`${at} uses arbitrary content length evidence`)
-    if (
-      rule === "SCHEMA-REQUIRED" &&
-      /LocalBusiness/i.test(combined) &&
-      /\b(telephone|openingHours|image|geo)\b/i.test(combined)
-    )
-      return fail(`${at} treats recommended LocalBusiness property as required`)
+    const claim =
+      trips(/\b(rank|ranks|ranking|rankings|CTR|click-through rate)\b/i) ??
+      trips(/\b(organic|search|more|less|lost|lose|losing|drive|driving|gain|increase[ds]?|drop(?:ped)?|boost)\s+traffic\b/i) ??
+      trips(/\btraffic\s+(loss|drop|gain|increase|growth)\b/i)
+    if (claim)
+      return fail(
+        `${at} makes an unsupported ranking or traffic claim. ${because(claim)} You have no ranking or analytics data. Describe what is broken, not what it costs in rankings or traffic. If you are QUOTING the page's own claim, put it in double quotes inside evidence — quoted spans are exempt.`,
+      )
+
+    const folklore = trips(/(keyword-optimized|primary keyword|keyword density)/i)
+    if (folklore)
+      return fail(
+        `${at} contains keyword folklore. ${because(folklore)} You have no query data. Remove it.`,
+      )
+
+    const length =
+      normalized.category === "content" ? trips(/(word count|\b\d+\s+words\b|thin content)/i) : undefined
+    if (length)
+      return fail(
+        `${at} uses content length as evidence. ${because(length)} Word count is not a quality measure. Say which specific question the page leaves unanswered instead.`,
+      )
+
+    const localBusiness =
+      rule === "SCHEMA-REQUIRED" && /LocalBusiness/i.test(combined)
+        ? trips(/\b(telephone|openingHours|image|geo)\b/i)
+        : undefined
+    if (localBusiness)
+      return fail(
+        `${at} treats a recommended LocalBusiness property as required. ${because(localBusiness)} Google requires only name and address on LocalBusiness; everything else is recommended. Report it as an optional enhancement, not a finding.`,
+      )
 
     try {
       validateFixDomains(normalized.fix, target)
@@ -478,8 +509,11 @@ export function validateFindings(
 
     const fingerprint =
       `${normalized.issue}\n${normalized.evidence}\n${normalized.page ?? ""}`.toLowerCase()
-    if (seen.has(fingerprint)) return fail(`${at} duplicates an earlier finding`)
-    seen.add(fingerprint)
+    if (seen.has(fingerprint))
+      return fail(
+        `${at} duplicates finding ${seen.get(fingerprint)}, which has the same issue and evidence. Keep one. If they are genuinely about different pages, set the page field on each.`,
+      )
+    seen.set(fingerprint, index)
     return normalized
   })
 
