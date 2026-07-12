@@ -33,6 +33,7 @@ test("page evidence collector returns stable core fields", () => {
   expect(result.language).toBe("en")
   expect(result.counts.words).toBe(3)
   expect(result.structuredData).toEqual({ jsonLd: [] })
+  expect(result.hreflang).toEqual({ tags: [], hasSelfRef: false })
   expect(result.links.nonHttp).toBe(0)
   expect(result.navigation).toBeNull()
 })

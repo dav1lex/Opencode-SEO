@@ -36,6 +36,7 @@ Check:
 - measured performance evidence only
 - console or response failures that affect rendered content
 - metadata meaningfulness: flag titles or descriptions that contain no useful content
+- hreflang: check for self-referencing tag when hreflang tags are present; in site audits, cross-check return tags and canonical alignment across language variants
 
 Do not audit sitemaps, site-wide duplication, orphan status, or redirect chains from single-page evidence. robots.txt collection must precede analysis; missing robots.txt is not a defect.
 

@@ -38,6 +38,14 @@
     }
   })
 
+  const hreflang = list('link[rel="alternate"][hreflang]').map((node) => ({
+    lang: node.getAttribute("hreflang")?.toLowerCase() || null,
+    href: attr(node, "href"),
+  }))
+  const hasSelfRef = hreflang.some(
+    (h) => h.lang === "x-default" || h.href === location.href || h.lang === null,
+  )
+
   const visibleText = text(document.body?.innerText)
   const bodyClone = document.body?.cloneNode(true)
   bodyClone
@@ -120,6 +128,7 @@
       }
     }),
     structuredData: { jsonLd },
+    hreflang: { tags: hreflang, hasSelfRef },
     visibleText: visibleText?.slice(0, 50000) || null,
     domText: domText?.slice(0, 50000) || null,
     navigation: navigation
