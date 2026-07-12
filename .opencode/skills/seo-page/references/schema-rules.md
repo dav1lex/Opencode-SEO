@@ -1,0 +1,19 @@
+# Structured-data rules
+
+- `SCHEMA-PARSE`: Structured-data block does not parse. High maximum.
+- `SCHEMA-REQUIRED`: Required property for a documented Google feature is absent. High maximum. Name the feature and exact required property.
+- `SCHEMA-ENTITY-LINK`: `@id` reference has no matching entity or creates contradictory identity. Medium maximum.
+- `SCHEMA-CONTENT-MISMATCH`: Markup materially disagrees with visible page content or advertises unavailable functionality. High maximum.
+- `SCHEMA-DEPRECATED`: Markup targets a retired or unsupported Google feature and creates misleading expectations. Medium maximum.
+- `SCHEMA-SEARCH-ACTION`: SearchAction points to unverified or unavailable search behavior. Medium maximum.
+
+Current constraints:
+
+- FAQ rich results stopped appearing 2026-05-07; Google removed documentation 2026-06-15. Existing accurate FAQPage may remain, but no SERP benefit may be claimed.
+- Sitelinks search box was removed in 2024. SearchAction has no sitelinks-search-box benefit.
+- LocalBusiness required properties are `name` and `address`. Telephone, geo, opening hours, and other properties are recommended, not required.
+- Do not recommend self-serving Review or AggregateRating markup for business's own reviews.
+- Service schema is not a Google rich-result feature. Treat it only as optional semantics.
+- Repeated descriptions and short `sameAs` arrays are not defects.
+
+List optional enhancements separately from findings. They do not enter findings validation.

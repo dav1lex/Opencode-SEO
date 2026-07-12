@@ -11,7 +11,7 @@
     text(document.querySelector(selector)?.getAttribute(name))
   const list = (selector) => [...document.querySelectorAll(selector)]
 
-  const structuredData = list('script[type="application/ld+json"]').map(
+  const jsonLd = list('script[type="application/ld+json"]').map(
     (node, index) => {
       try {
         return { index, data: JSON.parse(node.textContent || "") }
@@ -39,7 +39,11 @@
   })
 
   const visibleText = text(document.body?.innerText)
-  const domText = text(document.body?.textContent)
+  const bodyClone = document.body?.cloneNode(true)
+  bodyClone
+    ?.querySelectorAll("script, style, noscript, template, svg")
+    .forEach((node) => node.remove())
+  const domText = text(bodyClone?.textContent)
   const navigation = performance.getEntriesByType("navigation")[0]
 
   return {
@@ -92,9 +96,14 @@
         intrinsic: { width: node.naturalWidth, height: node.naturalHeight },
         rendered: { width: box.width, height: box.height },
         aspectRatio: style.aspectRatio,
+        visible:
+          box.width > 0 &&
+          box.height > 0 &&
+          style.display !== "none" &&
+          style.visibility !== "hidden",
       }
     }),
-    structuredData,
+    structuredData: { jsonLd },
     visibleText: visibleText?.slice(0, 50000) || null,
     domText: domText?.slice(0, 50000) || null,
     navigation: navigation

@@ -1,0 +1,13 @@
+# Technical rules
+
+- `TECH-INDEX-CONFLICT`: Collected robots metadata or response header blocks intended indexing. Critical maximum.
+- `TECH-META-MISSING`: Title, description, canonical, language, or viewport is absent when needed for page interpretation. High maximum. Absence alone must have concrete impact.
+- `TECH-CANON-CONFLICT`: Canonical points to a materially different page or hostname without supporting evidence. High maximum. Ignore root trailing-slash normalization.
+- `TECH-RENDER-FAIL`: Main content or navigation failed to render, or required resources failed. High maximum.
+- `TECH-HEADING-CLARITY`: Heading structure materially obscures page hierarchy. Low maximum. Multiple H1 elements alone do not qualify.
+- `TECH-IMAGE-ALT`: Meaningful image lacks useful text alternative, or decorative image has noisy alternative text. Medium maximum.
+- `TECH-ACCESSIBILITY`: Collected accessibility tree shows an interactive control without usable role or name. Medium maximum.
+- `TECH-CONSOLE-ERROR`: Captured console or network failure affects page content or interaction. High maximum.
+- `TECH-PERFORMANCE-MEASURED`: Lab or field data shows a performance failure. High maximum. Navigation timing alone is not CWV evidence.
+
+Passed checks may mention HTTP status, rendered content, metadata, social cards, language, and console state. Do not convert defaults or unmeasured risks into findings.

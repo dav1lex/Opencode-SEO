@@ -3,14 +3,20 @@ import { readFileSync } from "node:fs"
 
 test("page evidence collector returns stable core fields", () => {
   const source = readFileSync(
-    new URL("../.opencode/scripts/collect-page-evidence.js", import.meta.url),
+    new URL("../.opencode/skills/seo-page/collect-page-evidence.js", import.meta.url),
     "utf8",
   )
   const collector = eval(source)
   const document = {
     title: "  Example   Page ",
     documentElement: { lang: "en" },
-    body: { innerText: "Useful page content", textContent: "Useful page content" },
+    body: {
+      innerText: "Useful page content",
+      cloneNode: () => ({
+        textContent: "Useful page content",
+        querySelectorAll: () => [],
+      }),
+    },
     querySelector: () => null,
     querySelectorAll: () => [],
   }
@@ -26,7 +32,7 @@ test("page evidence collector returns stable core fields", () => {
   expect(result.title).toBe("Example Page")
   expect(result.language).toBe("en")
   expect(result.counts.words).toBe(3)
-  expect(result.structuredData).toEqual([])
+  expect(result.structuredData).toEqual({ jsonLd: [] })
   expect(result.links.nonHttp).toBe(0)
   expect(result.navigation).toBeNull()
 })
