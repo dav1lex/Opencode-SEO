@@ -37,7 +37,7 @@ export const rules = {
   "SITE-SITEMAP-ORPHAN": ["site", "high"],
   "SITE-SITEMAP-STALE": ["site", "low"],
   "TECH-PERFORMANCE-OUTLIER": ["technical", "medium"],
-  "SCHEMA-CROSS-PAGE-CONFLICT": ["schema", "medium"],
+  "SCHEMA-CROSS-PAGE-CONFLICT": ["schema", "high"],
   "SCHEMA-MISSING-CLASS": ["schema", "low"],
 } as const
 
