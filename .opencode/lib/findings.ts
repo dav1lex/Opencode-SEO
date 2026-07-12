@@ -1,7 +1,17 @@
 const priorities = ["low", "medium", "high", "critical"] as const
 const confidences = new Set(["high", "medium", "low"])
-const requiredText = ["rule", "category", "issue", "evidence", "impact", "fix"] as const
-const allowedFields = new Set([...requiredText, "priority", "confidence", "page", "prevalence"])
+// `category` is a pure function of `rule`, so it is derived rather than required.
+// Asking an author to restate a fact the registry already owns only invents a way
+// to get it wrong. Supplying it is allowed; contradicting the registry is not.
+const requiredText = ["rule", "issue", "evidence", "impact", "fix"] as const
+const allowedFields = new Set([
+  ...requiredText,
+  "category",
+  "priority",
+  "confidence",
+  "page",
+  "prevalence",
+])
 
 export const rules = {
   "TECH-INDEX-CONFLICT": ["technical", "critical"],
@@ -90,7 +100,9 @@ export function validateFindings(input: unknown, target?: string): Finding[] {
     const rule = finding.rule as keyof typeof rules
     const policy = rules[rule]
     if (!policy) throw new Error(`Finding ${index} has unknown rule`)
-    if (finding.category !== policy[0]) throw new Error(`Finding ${index} category conflicts with rule`)
+    if (finding.category !== undefined && finding.category !== policy[0])
+      throw new Error(`Finding ${index} category conflicts with rule`)
+    finding.category = policy[0]
     if (typeof finding.priority !== "string" || !priorities.includes(finding.priority as Finding["priority"]))
       throw new Error(`Finding ${index} has invalid priority`)
     if (priorities.indexOf(finding.priority as Finding["priority"]) > priorities.indexOf(policy[1]))

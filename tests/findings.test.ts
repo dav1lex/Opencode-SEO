@@ -148,3 +148,35 @@ test("invalid target URL yields clear error message", () => {
     "Validator target must be a valid absolute URL",
   )
 })
+
+test("derives category from the rule instead of requiring it", () => {
+  const [finding] = validateFindings([
+    {
+      rule: "SCHEMA-SEARCH-ACTION",
+      issue: "SearchAction targets a route that does not exist",
+      evidence: "page-evidence.json: SearchAction target /search; no search UI in DOM",
+      impact: "Markup advertises functionality the site does not provide",
+      fix: "Remove the SearchAction or implement the search route",
+      priority: "medium",
+      confidence: "high",
+    },
+  ])
+  expect(finding.category).toBe("schema")
+})
+
+test("still rejects a category that contradicts the rule", () => {
+  expect(() =>
+    validateFindings([
+      {
+        rule: "SCHEMA-SEARCH-ACTION",
+        category: "technical",
+        issue: "SearchAction targets a route that does not exist",
+        evidence: "page-evidence.json: SearchAction target /search",
+        impact: "Markup advertises functionality the site does not provide",
+        fix: "Remove the SearchAction",
+        priority: "medium",
+        confidence: "high",
+      },
+    ]),
+  ).toThrow("category conflicts with rule")
+})
