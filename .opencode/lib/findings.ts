@@ -85,6 +85,11 @@ export const rules: Record<string, Rule> = {
     max: "medium",
     impact: "The title or description carries no information about what the page offers.",
   },
+  "TECH-LINK-BROKEN": {
+    category: "technical",
+    max: "high",
+    impact: "A link on the page leads to a page that does not load.",
+  },
   "TECH-ROBOTS-BLOCK": {
     category: "technical",
     max: "high",
@@ -299,12 +304,15 @@ export function validateFindings(input: unknown, target?: string): Finding[] {
     if (!policy) throw new Error(`Finding ${index} has unknown rule`)
     if (finding.category !== undefined && finding.category !== policy.category)
       throw new Error(`Finding ${index} category conflicts with rule`)
+    // Errors from here on name the rule as well as the index: a real audit read "Finding 1"
+    // as the first finding, rewrote the wrong one five times, and never fixed the real problem.
+    const at = `Finding ${index} (${rule})`
     if (typeof finding.priority !== "string" || !priorities.includes(finding.priority as Finding["priority"]))
-      throw new Error(`Finding ${index} has invalid priority`)
+      throw new Error(`${at} has invalid priority`)
     if (priorities.indexOf(finding.priority as Finding["priority"]) > priorities.indexOf(policy.max))
-      throw new Error(`Finding ${index} exceeds rule priority`)
+      throw new Error(`${at} exceeds rule priority`)
     if (typeof finding.confidence !== "string" || !confidences.has(finding.confidence))
-      throw new Error(`Finding ${index} has invalid confidence`)
+      throw new Error(`${at} has invalid confidence`)
 
     // Authored impact is discarded, not merged. A supplied one is ignored on purpose:
     // the point is that no prose an author wrote can reach this field.
@@ -324,39 +332,46 @@ export function validateFindings(input: unknown, target?: string): Finding[] {
     // impact above, plus the rule registry itself.
     const combined = `${normalized.issue} ${normalized.evidence} ${normalized.fix}`
     if (rule !== "TECH-PERFORMANCE-MEASURED" && /\b(LCP|INP|CLS|Core Web Vitals)\b/i.test(combined))
-      throw new Error(`Finding ${index} makes unmeasured performance claim`)
+      throw new Error(`${at} makes unmeasured performance claim`)
     if (
       rule === "TECH-PERFORMANCE-MEASURED" &&
       (!/\b(LCP|INP|CLS)\b.{0,40}\d+(?:\.\d+)?/i.test(normalized.evidence) ||
         !/\b(CrUX|Lighthouse|PageSpeed|field data|lab data)\b/i.test(normalized.evidence))
     )
-      throw new Error(`Finding ${index} lacks measured performance evidence`)
+      throw new Error(`${at} lacks measured performance evidence`)
     if (
       rule !== "TECH-ROBOTS-BLOCK" &&
       /(robots meta|meta robots|robots tag)/i.test(normalized.issue) &&
       /(missing|not set|absent)/i.test(normalized.issue)
     )
-      throw new Error(`Finding ${index} treats default robots behavior as defect`)
+      throw new Error(`${at} treats default robots behavior as defect`)
     if (/\b(knowledge panel|rich result|rich snippet|local pack|map pack|SERP feature)/i.test(combined))
-      throw new Error(`Finding ${index} promises a search feature`)
-    if (/\b(rank|ranking|rankings|CTR|click-through rate|impressions|traffic)\b/i.test(combined))
-      throw new Error(`Finding ${index} makes an unsupported ranking or traffic claim`)
+      throw new Error(`${at} promises a search feature`)
+    // Bare "traffic" is not a claim: "low-traffic page" is the correct, required way to
+    // explain an absent CrUX record, and the rule docs ask for exactly that. Only the
+    // claim-shaped phrasings are banned.
+    if (
+      /\b(rank|ranks|ranking|rankings|CTR|click-through rate)\b/i.test(combined) ||
+      /\b(organic|search|more|less|lost|lose|losing|drive|driving|gain|increase[ds]?|drop(?:ped)?|boost)\s+traffic\b/i.test(combined) ||
+      /\btraffic\s+(loss|drop|gain|increase|growth)\b/i.test(combined)
+    )
+      throw new Error(`${at} makes an unsupported ranking or traffic claim`)
     if (/(keyword-optimized|primary keyword|keyword density)/i.test(combined))
-      throw new Error(`Finding ${index} contains keyword folklore`)
+      throw new Error(`${at} contains keyword folklore`)
     if (normalized.category === "content" && /(word count|\b\d+\s+words\b|thin content)/i.test(combined))
-      throw new Error(`Finding ${index} uses arbitrary content length evidence`)
+      throw new Error(`${at} uses arbitrary content length evidence`)
     if (
       rule === "SCHEMA-REQUIRED" &&
       /LocalBusiness/i.test(combined) &&
       /\b(telephone|openingHours|image|geo)\b/i.test(combined)
     )
-      throw new Error(`Finding ${index} treats recommended LocalBusiness property as required`)
+      throw new Error(`${at} treats recommended LocalBusiness property as required`)
 
     validateFixDomains(normalized.fix, target)
 
     const fingerprint =
       `${normalized.issue}\n${normalized.evidence}\n${normalized.page ?? ""}`.toLowerCase()
-    if (seen.has(fingerprint)) throw new Error(`Finding ${index} duplicates an earlier finding`)
+    if (seen.has(fingerprint)) throw new Error(`${at} duplicates an earlier finding`)
     seen.add(fingerprint)
     return normalized
   })

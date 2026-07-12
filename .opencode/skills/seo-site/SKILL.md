@@ -38,7 +38,9 @@ Build `site-summary.json` with, per page: `index`, `url`, `status`, `title`, `de
 
 Call `seo-detect` once per collected page, passing that page's directory and its URL as `page`. It computes every finding that is a pure function of the evidence — indexing blocks, missing metadata, redirect chains, JavaScript dependency, unparseable JSON-LD, image alt text, dimensions, above-the-fold lazy loading, image weight, anchor-text defects, hreflang self-reference, and social preview.
 
-These are exhaustive and already conform to the validator. Take them as given; do not ask a specialist to re-derive them. Across twenty pages this is the difference between counting every image and sampling a few.
+It also parses robots.txt to decide `TECH-ROBOTS-BLOCK`, and requests every internal link to decide `TECH-LINK-BROKEN`, writing the result to `page-links.json`. On a site audit, pass `checkLinks: false` for all but the entry page: the same internal links recur on every page, and re-requesting them twenty times is waste.
+
+These are exhaustive and already conform to the validator. Pass them into the findings payload **verbatim** — do not reword the issue, evidence, or fix. Across twenty pages this is the difference between counting every image and sampling a few.
 
 ## Delegate
 

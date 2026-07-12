@@ -187,3 +187,43 @@ test("hreflang tags with no self-reference are reported", () => {
   )
   expect(found.some((f) => f.rule === "HREFLANG-SELF-MISSING")).toBe(true)
 })
+
+test("robots.txt is matched, not read: longest rule decides", () => {
+  const blocked = detectFindings(evidence({ finalUrl: "https://example.com/admin/secret" }), http(), undefined, {
+    robotsTxt: "User-agent: *\nDisallow: /admin\nAllow: /admin/public\n",
+  })
+  expect(blocked.some((f) => f.rule === "TECH-ROBOTS-BLOCK")).toBe(true)
+
+  const allowed = detectFindings(evidence({ finalUrl: "https://example.com/admin/public/x" }), http(), undefined, {
+    robotsTxt: "User-agent: *\nDisallow: /admin\nAllow: /admin/public\n",
+  })
+  expect(allowed.filter((f) => f.rule === "TECH-ROBOTS-BLOCK")).toEqual([])
+})
+
+test("an absent robots.txt is default-allow, not a defect", () => {
+  const found = detectFindings(evidence(), http(), undefined, {})
+  expect(found.filter((f) => f.rule === "TECH-ROBOTS-BLOCK")).toEqual([])
+})
+
+test("broken internal links are reported with their status", () => {
+  const found = detectFindings(evidence(), http(), undefined, {
+    linkStatuses: [
+      { url: "https://example.com/ok", status: 200 },
+      { url: "https://example.com/blog", status: 404 },
+      { url: "https://example.com/dead", status: null, error: "ECONNREFUSED" },
+    ],
+  })
+  const broken = found.find((f) => f.rule === "TECH-LINK-BROKEN")
+  expect(broken).toBeDefined()
+  expect(broken!.issue).toContain("2 internal link(s)")
+  expect(broken!.evidence).toContain("/blog -> 404")
+  expect(broken!.evidence).toContain("ECONNREFUSED")
+  expect(broken!.priority).toBe("high")
+})
+
+test("a 3xx link is not broken", () => {
+  const found = detectFindings(evidence(), http(), undefined, {
+    linkStatuses: [{ url: "https://example.com/moved", status: 301 }],
+  })
+  expect(found.filter((f) => f.rule === "TECH-LINK-BROKEN")).toEqual([])
+})

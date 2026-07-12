@@ -35,7 +35,11 @@ Structured-data collection covers JSON-LD only. Report Microdata and RDFa as out
 
 Call `seo-detect` with the evidence directory. It computes every finding that is a pure function of the evidence — indexing blocks, missing metadata, redirect chains, JavaScript dependency, unparseable JSON-LD, image alt text, image dimensions, above-the-fold lazy loading, image weight, generic and conflicting anchors, hreflang self-reference, and social preview.
 
-These findings are exhaustive and already conform to the validator. Take them as given. Do not ask a specialist to re-derive them, and do not second-guess them: a model scanning eighty images by eye will miss one, and this does not.
+It also does two things no reader can do from a log: it *parses* robots.txt (longest-match precedence, wildcards, `$` anchors) to decide `TECH-ROBOTS-BLOCK`, and it *requests every internal link* to decide `TECH-LINK-BROKEN`, writing the result to `page-links.json`. Treat `page-links.json` as the only ground truth about whether a link works.
+
+These findings are exhaustive and already conform to the validator. Pass them into the findings payload **verbatim** — do not reword the issue, evidence, or fix. They were written to clear validation, and rewriting them is how a run ends up rejected for a phrase the detector never used.
+
+Do not ask a specialist to re-derive them, and do not second-guess them: a model scanning eighty images by eye will miss one, and this does not.
 
 ## Delegate
 

@@ -227,3 +227,35 @@ test("still rejects a category that contradicts the rule", () => {
     ]),
   ).toThrow("category conflicts with rule")
 })
+
+test('"low-traffic page" is a scope note, not a traffic claim', () => {
+  // The exact payload that failed a real audit five times. The rule docs themselves ask
+  // the author to explain an absent CrUX record this way.
+  const result = validateFindings([
+    {
+      rule: "TECH-PERFORMANCE-MEASURED",
+      issue: "LCP 3.4s in lab. No CrUX field data (low-traffic page, normal).",
+      evidence: "page-performance.json: lab LCP 3376ms, performance score 0.92, mobile strategy. Field data is null.",
+      fix: "Optimise the LCP element — serve a smaller mobile variant of the hero image.",
+      priority: "high",
+      confidence: "high",
+    },
+  ])
+  expect(result).toHaveLength(1)
+})
+
+test("still rejects a real traffic claim", () => {
+  expect(() =>
+    validateFindings([{ ...finding, fix: "Fix this to recover lost organic traffic" }]),
+  ).toThrow("unsupported ranking or traffic claim")
+})
+
+test("validation errors name the rule, not just a zero-based index", () => {
+  // A real audit read "Finding 1" as the first finding and rewrote the wrong one five times.
+  expect(() =>
+    validateFindings([
+      finding,
+      { ...finding, rule: "TECH-HEADING-CLARITY", priority: "critical" },
+    ]),
+  ).toThrow("Finding 1 (TECH-HEADING-CLARITY) exceeds rule priority")
+})

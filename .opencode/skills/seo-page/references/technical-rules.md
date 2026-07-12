@@ -7,11 +7,12 @@
 - `TECH-HEADING-CLARITY`: Heading structure materially obscures page hierarchy. Low maximum. Multiple H1 elements alone do not qualify.
 - `TECH-IMAGE-ALT`: Meaningful image lacks useful text alternative, or decorative image has noisy alternative text. Medium maximum.
 - `TECH-ACCESSIBILITY`: Collected accessibility tree shows an interactive control without usable role or name. Medium maximum.
-- `TECH-CONSOLE-ERROR`: Captured console or network failure affects page content or interaction. High maximum.
+- `TECH-CONSOLE-ERROR`: Captured console or network failure affects page content or interaction. High maximum. `net::ERR_ABORTED` on a speculative prefetch is the browser cancelling its own request, not a broken route — a real audit reported a working page as broken on exactly this. Confirm against `page-links.json` before claiming a link fails; if the link resolves, there is no finding.
 - `TECH-PERFORMANCE-MEASURED`: Lab or field data shows a performance failure. High maximum. Navigation timing alone is not CWV evidence.
 - `TECH-LINK-ANCHOR-GENERIC`: Internal links use generic, non-descriptive anchor text (e.g., "click here", "read more", "here"). Low maximum. Separate enhancements from findings: report count as evidence, flag only when generic anchors form primary navigation for key pages.
 - `TECH-LINK-ANCHOR-CONFLICT`: Same anchor text points to different internal destinations, creating navigation ambiguity. Low maximum.
 - `TECH-META-MEANINGLESS`: Title or description provides no useful descriptive content (e.g., "Home", "Untitled", empty, identical to domain name). Medium maximum. Length alone is not meaningfulness. Default values injected by a CMS count as meaningless.
+- `TECH-LINK-BROKEN`: An internal link on the page returns a non-2xx status, or fails to connect. High maximum. Evidence must give the link URL and the observed status. Computed by requesting each collected internal link; a link never requested is not evidence of anything.
 - `TECH-ROBOTS-BLOCK`: robots.txt blocks the audited page or critical resources from crawling. High maximum. Absent robots.txt is default allow, not a defect.
 - `TECH-PERFORMANCE-OUTLIER`: A page has TTFB, transfer size, or decoded body size significantly higher (>3×) than the site median. Medium maximum. Evidence must include the outlier value and median.
 - `TECH-REDIRECT-CHAIN`: Collected redirect chain has more than one hop, or crosses hostname or protocol before resolving. Medium maximum. Evidence must list each hop and status. A single HTTP-to-HTTPS or trailing-slash hop is not a defect.

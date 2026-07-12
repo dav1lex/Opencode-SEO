@@ -1,4 +1,6 @@
 import type { HttpEvidence } from "./http"
+import type { LinkStatus } from "./links"
+import { isAllowed, parseRobots } from "./robots"
 
 /**
  * Deterministic findings.
@@ -64,13 +66,55 @@ export type PageEvidence = {
 
 const NOINDEX = /\b(noindex|none)\b/i
 
+export type Extras = {
+  /** Raw robots.txt body. Absent means none was served, which is default-allow. */
+  robotsTxt?: string
+  /** Results of actually requesting the internal links this page contains. */
+  linkStatuses?: LinkStatus[]
+}
+
 export function detectFindings(
   evidence: PageEvidence,
   http?: HttpEvidence,
   page?: string,
+  extras: Extras = {},
 ): Detected[] {
   const found: Detected[] = []
   const add = (f: Omit<Detected, "page">) => found.push(page ? { ...f, page } : f)
+
+  // --- robots.txt -----------------------------------------------------------
+  // Parsed, not read. Longest-match precedence, wildcards, and $ anchors decide this,
+  // and an absent robots.txt is default-allow rather than a defect.
+  if (extras.robotsTxt) {
+    const robots = parseRobots(extras.robotsTxt)
+    const { pathname } = new URL(evidence.finalUrl)
+    if (!isAllowed(robots, pathname, "googlebot"))
+      add({
+        rule: "TECH-ROBOTS-BLOCK",
+        issue: "robots.txt disallows Googlebot from crawling this page",
+        evidence: `robots.txt: the longest matching rule for ${pathname} disallows it for Googlebot`,
+        fix: `Allow ${pathname} in robots.txt if this page should be crawled`,
+        priority: "high",
+        confidence: "high",
+      })
+  }
+
+  // --- Broken links ---------------------------------------------------------
+  const broken = (extras.linkStatuses ?? []).filter(
+    (link) => link.status === null || link.status < 200 || link.status >= 400,
+  )
+  if (broken.length)
+    add({
+      rule: "TECH-LINK-BROKEN",
+      issue: `${broken.length} internal link(s) do not resolve`,
+      evidence: `Requested each internal link: ${broken
+        .slice(0, 8)
+        .map((link) => `${link.url} -> ${link.status ?? link.error}`)
+        .join("; ")}${broken.length > 8 ? `, and ${broken.length - 8} more` : ""}`,
+      fix: "Repair or remove each link that does not resolve",
+      priority: "high",
+      confidence: "high",
+    })
 
   // --- Indexing -------------------------------------------------------------
   const headerNoindex = http?.indexing.xRobotsTag && NOINDEX.test(http.indexing.xRobotsTag)
