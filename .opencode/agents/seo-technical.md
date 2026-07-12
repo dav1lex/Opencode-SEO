@@ -33,7 +33,8 @@ Check:
 
 - title, description, canonical, robots, language, and viewport
 - heading structure and link behavior including anchor text quality and conflicts
-- indexability conflicts visible in page metadata, response headers, or robots.txt. `page-http.json` carries `indexing.xRobotsTag` and `indexing.linkHeader`; an `X-Robots-Tag` of `noindex` or `none` is a `TECH-INDEX-CONFLICT` even when the meta robots tag looks fine, because the header wins
+- indexability conflicts visible in page metadata, response headers, or robots.txt. `page-http.json` carries `indexing.xRobotsTag`; an `X-Robots-Tag` of `noindex` or `none` is a `TECH-INDEX-CONFLICT` even when the meta robots tag looks fine, because the header wins
+- header canonical: use `indexing.canonicalFromHeader`, which is already parsed. Never read `indexing.linkHeader` yourself — it also carries `preconnect` and `preload` entries that are not canonicals. A null `canonicalFromHeader` means no header canonical exists, whatever else the raw header contains
 - redirect chain from `page-http.json`: more than one hop, or a hop crossing hostname or protocol, is `TECH-REDIRECT-CHAIN`. A single HTTP-to-HTTPS or trailing-slash hop is normal and not a finding
 - JavaScript dependency: compare `raw.textLength` in `page-http.json` against `domText` length in `page-evidence.json`. A near-empty server response that renders full content is `TECH-JS-DEPENDENT`. Report the dependency; never claim the page will not be indexed
 - rendered content availability and obvious client-rendering failures
