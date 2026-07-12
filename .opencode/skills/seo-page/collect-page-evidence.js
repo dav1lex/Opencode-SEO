@@ -81,6 +81,22 @@
       ).length,
       items: links,
       truncated: allLinks.length > links.length,
+      anchorQuality: (() => {
+        const internalLinks = links.filter((l) => l.kind === "internal")
+        const generic = /^(click here|here|read more|learn more|more|details|link|this|go|visit|page|click|submit|download|continue|next|previous|back|home|enter|follow us)$/i
+        const genericAnchors = internalLinks.filter((l) => generic.test(l.text || "")).map((l) => ({ text: l.text, href: l.href }))
+        const byText = new Map()
+        for (const l of internalLinks) {
+          if (!l.text) continue
+          const key = l.text.toLowerCase()
+          if (!byText.has(key)) byText.set(key, [])
+          byText.get(key).push(l.href)
+        }
+        const conflicts = [...byText.entries()]
+          .filter(([, urls]) => new Set(urls).size > 1)
+          .map(([text, urls]) => ({ text, urls: [...new Set(urls)] }))
+        return { genericAnchors, anchorConflicts: conflicts }
+      })(),
     },
     images: list("img").slice(0, 300).map((node) => {
       const box = node.getBoundingClientRect()

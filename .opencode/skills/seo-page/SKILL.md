@@ -18,7 +18,8 @@ Before navigation, call `seo-validate-url` and navigate only to its returned URL
 Use Playwright MCP as the source of rendered-page evidence:
 
 1. Navigate to the target and wait for the document to settle.
-2. Read `collect-page-evidence.js` from this skill directory and pass its function expression unchanged to Playwright's browser evaluation tool.
+2. If the page returned 200, fetch `{origin}/robots.txt` using `webfetch` and save to `.playwright-mcp/robots.txt`.
+3. Read `collect-page-evidence.js` from this skill directory and pass its function expression unchanged to Playwright's browser evaluation tool.
 3. Use its structured result as shared evidence for metadata, headings, classified links, computed image layout, visible and hidden DOM text, navigation timing, and structured data.
 4. Save evaluation result to `.playwright-mcp/page-evidence.json` and accessibility snapshot to `.playwright-mcp/page-snapshot.md`; never write audit artifacts in repository root.
 5. Save browser console output to `.playwright-mcp/page-console.txt` and network request output to `.playwright-mcp/page-network.txt` before delegation. Missing output becomes an explicit scope limit.
@@ -30,7 +31,7 @@ Do not call Core Web Vitals good or bad without measured lab or field data. Sour
 
 ## Delegate
 
-Pass the same evidence files to these subagents in parallel. Tell each agent to read `.playwright-mcp/page-evidence.json`, `.playwright-mcp/page-snapshot.md`, `.playwright-mcp/page-console.txt`, and `.playwright-mcp/page-network.txt`; do not create different evidence summaries:
+Pass the same evidence files to these subagents in parallel. Tell each agent to read `.playwright-mcp/page-evidence.json`, `.playwright-mcp/page-snapshot.md`, `.playwright-mcp/page-console.txt`, `.playwright-mcp/page-network.txt`, and `.playwright-mcp/robots.txt`; do not create different evidence summaries:
 
 - `seo-technical`: crawl/index directives, metadata, rendering, links, images, mobile basics, and measured performance failures when measurement exists.
 - `seo-content`: intent match, hierarchy, clarity, depth, trust signals, and citation readiness.

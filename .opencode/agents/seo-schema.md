@@ -9,6 +9,7 @@ permission:
     ".playwright-mcp/page-snapshot.md": allow
     ".playwright-mcp/page-console.txt": allow
     ".playwright-mcp/page-network.txt": allow
+    ".playwright-mcp/robots.txt": allow
     ".opencode/skills/seo-page/references/*.md": allow
 ---
 

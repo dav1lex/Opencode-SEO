@@ -9,5 +9,9 @@
 - `TECH-ACCESSIBILITY`: Collected accessibility tree shows an interactive control without usable role or name. Medium maximum.
 - `TECH-CONSOLE-ERROR`: Captured console or network failure affects page content or interaction. High maximum.
 - `TECH-PERFORMANCE-MEASURED`: Lab or field data shows a performance failure. High maximum. Navigation timing alone is not CWV evidence.
+- `TECH-LINK-ANCHOR-GENERIC`: Internal links use generic, non-descriptive anchor text (e.g., "click here", "read more", "here"). Low maximum. Separate enhancements from findings: report count as evidence, flag only when generic anchors form primary navigation for key pages.
+- `TECH-LINK-ANCHOR-CONFLICT`: Same anchor text points to different internal destinations, creating navigation ambiguity. Low maximum.
+- `TECH-META-MEANINGLESS`: Title or description provides no useful descriptive content (e.g., "Home", "Untitled", empty, identical to domain name). Medium maximum. Length alone is not meaningfulness. Default values injected by a CMS count as meaningless.
+- `TECH-ROBOTS-BLOCK`: robots.txt blocks the audited page or critical resources from crawling. High maximum. Absent robots.txt is default allow, not a defect.
 
 Passed checks may mention HTTP status, rendered content, metadata, social cards, language, and console state. Do not convert defaults or unmeasured risks into findings.
