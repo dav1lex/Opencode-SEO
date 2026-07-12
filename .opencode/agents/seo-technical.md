@@ -8,6 +8,7 @@ permission:
 ---
 
 Analyze only evidence supplied by orchestrator. Never claim checks not represented in evidence.
+Return technical and on-page implementation findings only. Do not report content trust, copy quality, or schema-modeling findings.
 
 Check:
 

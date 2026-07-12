@@ -1,4 +1,9 @@
-({ document = globalThis.document, location = globalThis.location } = {}) => {
+({
+  document = globalThis.document,
+  location = globalThis.location,
+  performance = globalThis.performance,
+  getComputedStyle = globalThis.getComputedStyle,
+} = {}) => {
   const text = (value) => value?.trim().replace(/\s+/g, " ") || null
   const content = (selector) =>
     text(document.querySelector(selector)?.getAttribute("content"))
@@ -19,15 +24,23 @@
   const allLinks = list("a[href]")
   const links = allLinks.slice(0, 500).map((node) => {
     const url = new URL(node.href, location.href)
+    const kind =
+      url.protocol === "http:" || url.protocol === "https:"
+        ? url.origin === location.origin
+          ? "internal"
+          : "external"
+        : url.protocol.replace(":", "")
     return {
       href: url.href,
       text: text(node.textContent),
-      internal: url.origin === location.origin,
+      kind,
       rel: text(node.getAttribute("rel")),
     }
   })
 
   const visibleText = text(document.body?.innerText)
+  const domText = text(document.body?.textContent)
+  const navigation = performance.getEntriesByType("navigation")[0]
 
   return {
     finalUrl: location.href,
@@ -57,20 +70,43 @@
     })),
     links: {
       total: allLinks.length,
-      internal: links.filter((link) => link.internal).length,
-      external: links.filter((link) => !link.internal).length,
+      internal: links.filter((link) => link.kind === "internal").length,
+      external: links.filter((link) => link.kind === "external").length,
+      nonHttp: links.filter(
+        (link) => link.kind !== "internal" && link.kind !== "external",
+      ).length,
       items: links,
       truncated: allLinks.length > links.length,
     },
-    images: list("img").slice(0, 300).map((node) => ({
-      src: text(node.currentSrc || node.src),
-      alt: node.hasAttribute("alt") ? node.getAttribute("alt") : null,
-      width: node.getAttribute("width"),
-      height: node.getAttribute("height"),
-      loading: node.getAttribute("loading"),
-    })),
+    images: list("img").slice(0, 300).map((node) => {
+      const box = node.getBoundingClientRect()
+      const style = getComputedStyle(node)
+      return {
+        src: text(node.currentSrc || node.src),
+        alt: node.hasAttribute("alt") ? node.getAttribute("alt") : null,
+        attributes: {
+          width: node.getAttribute("width"),
+          height: node.getAttribute("height"),
+          loading: node.getAttribute("loading"),
+        },
+        intrinsic: { width: node.naturalWidth, height: node.naturalHeight },
+        rendered: { width: box.width, height: box.height },
+        aspectRatio: style.aspectRatio,
+      }
+    }),
     structuredData,
     visibleText: visibleText?.slice(0, 50000) || null,
+    domText: domText?.slice(0, 50000) || null,
+    navigation: navigation
+      ? {
+          status: navigation.responseStatus || null,
+          protocol: navigation.nextHopProtocol || null,
+          transferSize: navigation.transferSize,
+          encodedBodySize: navigation.encodedBodySize,
+          decodedBodySize: navigation.decodedBodySize,
+          ttfb: Math.round(navigation.responseStart),
+        }
+      : null,
     counts: {
       words: (visibleText || "").split(/\s+/).filter(Boolean).length,
       forms: list("form").length,

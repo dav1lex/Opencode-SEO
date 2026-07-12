@@ -8,6 +8,7 @@ permission:
 ---
 
 Analyze only supplied JSON-LD, Microdata, RDFa, URL, and visible-content evidence.
+Return structured-data findings only. Do not report copy quality, accessibility, image layout, headings, or unsupported business-trust concerns.
 
 Check:
 

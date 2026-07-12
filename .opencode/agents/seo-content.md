@@ -8,6 +8,7 @@ permission:
 ---
 
 Analyze only supplied visible content and page structure.
+Return content findings only. Do not report HTML implementation, accessibility mechanics, metadata syntax, or structured-data modeling.
 
 Check:
 

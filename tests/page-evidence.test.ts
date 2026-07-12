@@ -10,7 +10,7 @@ test("page evidence collector returns stable core fields", () => {
   const document = {
     title: "  Example   Page ",
     documentElement: { lang: "en" },
-    body: { innerText: "Useful page content" },
+    body: { innerText: "Useful page content", textContent: "Useful page content" },
     querySelector: () => null,
     querySelectorAll: () => [],
   }
@@ -18,11 +18,15 @@ test("page evidence collector returns stable core fields", () => {
     href: process.env.PAGE_EVIDENCE_TEST_URL || "",
     origin: process.env.PAGE_EVIDENCE_TEST_ORIGIN || "",
   }
+  const performance = { getEntriesByType: () => [] }
+  const getComputedStyle = () => ({ aspectRatio: "auto" })
 
-  const result = collector({ document, location })
+  const result = collector({ document, location, performance, getComputedStyle })
 
   expect(result.title).toBe("Example Page")
   expect(result.language).toBe("en")
   expect(result.counts.words).toBe(3)
   expect(result.structuredData).toEqual([])
+  expect(result.links.nonHttp).toBe(0)
+  expect(result.navigation).toBeNull()
 })

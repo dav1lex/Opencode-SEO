@@ -17,7 +17,7 @@ Use Playwright MCP as the source of rendered-page evidence:
 
 1. Navigate to the target and wait for the document to settle.
 2. Read `.opencode/scripts/collect-page-evidence.js` and pass its function expression unchanged to Playwright's browser evaluation tool.
-3. Use its structured result as shared evidence for metadata, headings, links, images, visible text, and structured data.
+3. Use its structured result as shared evidence for metadata, headings, classified links, computed image layout, visible and hidden DOM text, navigation timing, and structured data.
 4. Capture an accessibility snapshot for semantic and interaction evidence.
 5. Inspect relevant document response and browser console evidence when available.
 6. Take a screenshot only when visual evidence helps a finding.
@@ -37,6 +37,10 @@ Subagents analyze supplied evidence. They must not fetch the page again.
 ## Synthesis
 
 Merge duplicates. Prefer direct DOM, response, console, or screenshot evidence over inference. Omit sections with no evidence.
+
+Reject specialist findings outside that specialist's scope. When priorities conflict, choose priority from evidenced impact rather than averaging agent labels.
+
+Before presenting final report, serialize merged findings as JSON and call `seo-validate-findings`. Fix rejected fields or duplicates; never skip validation. Passed checks and scope limits remain separate from findings payload.
 
 For every finding provide:
 
