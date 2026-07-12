@@ -29,7 +29,7 @@ Check:
 
 Do not infer author reputation, backlinks, traffic, rankings, factual accuracy, keyword demand, or competitor norms without external evidence.
 
-Return `findings` as JSON objects containing exactly: rule, category, issue, evidence, impact, fix, priority, confidence. Category must be `content` for per-page findings, or `site` for site-wide findings using SITE-* rule IDs. Return passed checks separately. No keyword or word-count folklore.
+Return `findings` as JSON objects containing exactly: rule, issue, evidence, fix, priority, confidence. Do not supply `category` or `impact` — the validator derives both from the rule ID and discards anything you write there. Return passed checks separately. Passed checks are rule IDs, not prose. No keyword or word-count folklore.
 
 ## Rules already computed for you
 

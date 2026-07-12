@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import { rules, validateFindings } from "../.opencode/lib/findings"
+import { rules, validateFindings, validatePassedChecks } from "../.opencode/lib/findings"
 import { readFileSync } from "node:fs"
 
 const finding = {
@@ -13,8 +13,10 @@ const finding = {
   confidence: "high",
 }
 
-test("accepts complete findings", () => {
-  expect(validateFindings([finding])).toEqual([finding])
+test("accepts complete findings, with impact taken from the rule", () => {
+  expect(validateFindings([finding])).toEqual([
+    { ...finding, impact: rules["TECH-META-MISSING"].impact },
+  ])
 })
 
 test("rejects incomplete findings", () => {
@@ -66,9 +68,54 @@ test("rule references match validator registry", () => {
       ...readFileSync(new URL(`${base}/${file}`, import.meta.url), "utf8").matchAll(
         /`([A-Z]+-[A-Z-]+)`:[^\n]+?(Critical|High|Medium|Low) maximum/gi,
       ),
-    ].map((match) => [match[1], [category, match[2].toLowerCase()]]),
+    ].map((match) => [match[1], { category, max: match[2].toLowerCase() }]),
   )
-  expect(Object.fromEntries(documented)).toEqual(rules)
+  // The docs carry category and ceiling; impact lives only in the registry, so compare
+  // the registry with impact stripped out.
+  const registry = Object.fromEntries(
+    Object.entries(rules).map(([id, rule]) => [id, { category: rule.category, max: rule.max }]),
+  )
+  expect(Object.fromEntries(documented)).toEqual(registry)
+})
+
+test("every rule carries a derived impact", () => {
+  for (const [id, rule] of Object.entries(rules)) {
+    expect(rule.impact, `${id} has no impact`).toBeTruthy()
+  }
+})
+
+test("derives impact from the rule and discards any the author supplied", () => {
+  const [result] = validateFindings([
+    { ...finding, impact: "This hurts your Core Web Vitals ranking potential in knowledge panels" },
+  ])
+  expect(result.impact).toBe(rules[finding.rule].impact)
+  expect(result.impact).not.toContain("ranking")
+})
+
+test("rejects a search-feature promise written into the fix", () => {
+  expect(() =>
+    validateFindings([{ ...finding, fix: "Add this to earn a rich result in the SERP" }]),
+  ).toThrow("promises a search feature")
+})
+
+test("rejects a traffic claim written into the issue", () => {
+  expect(() =>
+    validateFindings([{ ...finding, issue: "This is costing you organic traffic" }]),
+  ).toThrow("unsupported ranking or traffic claim")
+})
+
+test("rejects a passed check that is not a known rule", () => {
+  // A real audit invented `SCHEMA-FAQ-MATCH` here, because nothing was checking.
+  expect(() => validatePassedChecks(["SCHEMA-PARSE", "SCHEMA-FAQ-MATCH"])).toThrow(
+    "not a known rule ID",
+  )
+})
+
+test("accepts passed checks that are all known rules", () => {
+  expect(validatePassedChecks(["SCHEMA-PARSE", "TECH-META-MISSING"])).toEqual([
+    "SCHEMA-PARSE",
+    "TECH-META-MISSING",
+  ])
 })
 
 test("rejects missing robots meta as a defect", () => {

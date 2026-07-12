@@ -55,9 +55,9 @@ Merge the `seo-detect` findings with the specialists'. Where a specialist raised
 
 Prefer direct DOM, response, console, or performance evidence over inference. Omit sections with no evidence. Reject a specialist finding that falls outside that specialist's scope. When priorities conflict, take the priority the evidence supports rather than averaging agent labels.
 
-Serialize merged findings as JSON and call `seo-validate-findings` with the normalized audited URL as `target`. Fix whatever it rejects; never skip validation. Passed checks and scope limits are not findings and stay out of the payload.
+Serialize merged findings as JSON and call `seo-validate-findings` with the normalized audited URL as `target`. Fix whatever it rejects; never skip validation. Pass the passed checks to the validator too, as a JSON array of rule IDs — not prose. A rule you did not check is not a passed check, and a name that is not a rule ID is rejected. Scope limits stay out of both payloads.
 
-For every finding provide `rule`, `issue`, `evidence`, `impact`, `fix`, `priority` (critical, high, medium, or low) and `confidence` (high, medium, or low). Do not supply `category`; the validator derives it from the rule ID.
+For every finding provide `rule`, `issue`, `evidence`, `fix`, `priority` (critical, high, medium, or low) and `confidence` (high, medium, or low). Do not supply `category` or `impact`: the validator derives both from the rule ID, and anything you write there is discarded. Impact is a property of the rule, not of the page.
 
 Do not produce an overall SEO score. A score invents precision the evidence cannot support.
 

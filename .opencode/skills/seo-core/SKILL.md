@@ -21,6 +21,6 @@ For unsupported workflows, state they are not built. Do not simulate missing cap
 3. Load matching workflow skill.
 4. Delegate only checks required by that workflow.
 5. Merge duplicate findings.
-6. Return findings with issue, evidence, impact, fix, priority, and confidence.
+6. Return findings with issue, evidence, fix, priority, and confidence. Category and impact are derived from the rule ID by the validator, never written by hand.
 
 Never invent measurements, browser output, API data, or search results.

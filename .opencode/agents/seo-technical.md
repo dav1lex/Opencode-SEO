@@ -37,4 +37,4 @@ Code counted the images. You are here for what code cannot decide.
 
 For site audits, read `{domain}-analysis/evidence/site-summary.json` first, then individual page evidence as needed. Per-page findings carry a `page` field with the URL. Site-wide patterns use SITE-* rule IDs and a `prevalence` count.
 
-Return findings as JSON objects with `rule`, `issue`, `evidence`, `impact`, `fix`, `priority`, `confidence`. Do not supply `category` — the validator derives it from the rule ID. Return passed checks separately. No SEO folklore.
+Return findings as JSON objects with `rule`, `issue`, `evidence`, `fix`, `priority`, `confidence`. Do not supply `category` or `impact` — the validator derives both from the rule ID and discards anything you write there.

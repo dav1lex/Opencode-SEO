@@ -33,7 +33,7 @@ Prefer JSON-LD. Never promise rich-result eligibility. Do not recommend deprecat
 
 Generate replacement JSON-LD only when user asks or when a precise fix needs a short example.
 
-Return `findings` as JSON objects containing exactly: rule, category, issue, evidence, impact, fix, priority, confidence. Category must be `schema` for per-page findings, or `site` for site-wide findings using SITE-* rule IDs. Return passed checks separately. Distinguish required properties from optional enhancements.
+Return `findings` as JSON objects containing exactly: rule, issue, evidence, fix, priority, confidence. Do not supply `category` or `impact` — the validator derives both from the rule ID and discards anything you write there. Return passed checks separately. Passed checks are rule IDs, not prose. Distinguish required properties from optional enhancements.
 
 ## Rules already computed for you
 
