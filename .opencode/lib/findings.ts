@@ -1,7 +1,7 @@
 const priorities = ["low", "medium", "high", "critical"] as const
 const confidences = new Set(["high", "medium", "low"])
 const requiredText = ["rule", "category", "issue", "evidence", "impact", "fix"] as const
-const allowedFields = new Set([...requiredText, "priority", "confidence"])
+const allowedFields = new Set([...requiredText, "priority", "confidence", "page", "prevalence"])
 
 export const rules = {
   "TECH-INDEX-CONFLICT": ["technical", "critical"],
@@ -29,6 +29,8 @@ export const rules = {
   "SCHEMA-CONTENT-MISMATCH": ["schema", "high"],
   "SCHEMA-DEPRECATED": ["schema", "medium"],
   "SCHEMA-SEARCH-ACTION": ["schema", "medium"],
+  "SITE-DUPLICATE-TITLE": ["site", "high"],
+  "SITE-DUPLICATE-DESC": ["site", "medium"],
 } as const
 
 type Finding = {

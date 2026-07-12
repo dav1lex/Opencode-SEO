@@ -10,6 +10,7 @@ Act as orchestrator. Keep evidence separate from judgment.
 ## Current workflows
 
 - `page <url>`: load `seo-page` and inspect one rendered page.
+- `site <url>`: load `seo-site` and audit up to 20 sample pages across a site.
 
 For unsupported workflows, state they are not built. Do not simulate missing capabilities.
 

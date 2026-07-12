@@ -56,19 +56,14 @@ test("rejects measured rule without metric source", () => {
 
 test("rule references match validator registry", () => {
   const files = {
-    technical: "technical-rules.md",
-    content: "content-rules.md",
-    schema: "schema-rules.md",
+    technical: ["technical-rules.md", "../.opencode/skills/seo-page/references"],
+    content: ["content-rules.md", "../.opencode/skills/seo-page/references"],
+    schema: ["schema-rules.md", "../.opencode/skills/seo-page/references"],
+    site: ["SKILL.md", "../.opencode/skills/seo-site"],
   }
-  const documented = Object.entries(files).flatMap(([category, file]) =>
+  const documented = Object.entries(files).flatMap(([category, [file, base]]) =>
     [
-      ...readFileSync(
-        new URL(
-          `../.opencode/skills/seo-page/references/${file}`,
-          import.meta.url,
-        ),
-        "utf8",
-      ).matchAll(
+      ...readFileSync(new URL(`${base}/${file}`, import.meta.url), "utf8").matchAll(
         /`([A-Z]+-[A-Z-]+)`:[^\n]+?(Critical|High|Medium|Low) maximum/gi,
       ),
     ].map((match) => [match[1], [category, match[2].toLowerCase()]]),
