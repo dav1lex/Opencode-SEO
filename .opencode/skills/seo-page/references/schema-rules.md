@@ -15,5 +15,7 @@ Current constraints:
 - Do not recommend self-serving Review or AggregateRating markup for business's own reviews.
 - Service schema is not a Google rich-result feature. Treat it only as optional semantics.
 - Repeated descriptions and short `sameAs` arrays are not defects.
+- `SCHEMA-CROSS-PAGE-CONFLICT`: Multiple pages define the same entity type with contradictory core properties (different identifiers, divergent descriptions, conflicting addresses). Medium maximum. Category `schema`.
+- `SCHEMA-MISSING-CLASS`: A page type commonly structured (article, product, local business) has no JSON-LD while sibling pages of the same type embed it. Low maximum. Category `schema`.
 
 List optional enhancements separately from findings. They do not enter findings validation.

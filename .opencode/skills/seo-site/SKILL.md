@@ -30,7 +30,9 @@ For each sampled page URL:
 7. Save snapshot to `.playwright-mcp/site-pages/{page-index}/page-snapshot.md`.
 8. For first page only: save console to `.playwright-mcp/site-pages/0/page-console.txt` and network to `.playwright-mcp/site-pages/0/page-network.txt`.
 
-After collection, build `.playwright-mcp/site-summary.json` containing per-page: `index`, `url`, `status`, `title`, `description`, `canonical`, `h1Count`, `headingCount`, `imageCount`, `linkCount`, `schemaTypes`, `wordCount`. This gives specialists a quick overview without reading every evidence file.
+After collection, build `.playwright-mcp/site-summary.json` containing per-page: `index`, `url`, `status`, `title`, `description`, `canonical`, `h1Count`, `headingCount`, `imageCount`, `linkCount`, `schemaTypes`, `wordCount`, `ttfb`, `transferSize`. Add `sitemap` section with URLs and `lastmod` parsed from the sitemap. Add `performance` section with median TTFB, p75, max, and per-page outliers (>3× median).
+
+This gives specialists a quick overview without reading every evidence file.
 
 ## Delegate
 
@@ -62,3 +64,7 @@ List skipped/failed pages with reason in scope limits. Report as limitation, not
 
 - `SITE-DUPLICATE-TITLE`: Multiple pages share an identical title tag. High maximum. Category `site`. Evidence must list affected pages and the duplicate string.
 - `SITE-DUPLICATE-DESC`: Multiple pages share an identical meta description. Medium maximum. Category `site`. Evidence must list affected pages and the duplicate string.
+- `SITE-SITEMAP-ORPHAN`: Sitemap lists a URL that returned a non-200 status or was not found during collection. High maximum. Category `site`. Evidence must list the orphan URL and observed status.
+- `SITE-SITEMAP-STALE`: Sitemap `lastmod` date is older than 30 days for multiple pages, indicating possible crawl staleness. Low maximum. Category `site`.
+
+Additional cross-page rules live in the page-level reference files: `TECH-PERFORMANCE-OUTLIER` in `technical-rules.md`, `SCHEMA-CROSS-PAGE-CONFLICT` and `SCHEMA-MISSING-CLASS` in `schema-rules.md`.

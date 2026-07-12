@@ -34,9 +34,11 @@ Check:
 - image alt text and explicit dimensions
 - mobile and accessibility basics affecting discovery or use
 - measured performance evidence only
+- performance outlier detection: compare TTFB, transfer size, and decoded body size across pages; flag values >3× site median
 - console or response failures that affect rendered content
 - metadata meaningfulness: flag titles or descriptions that contain no useful content
 - hreflang: check for self-referencing tag when hreflang tags are present; in site audits, cross-check return tags and canonical alignment across language variants
+- sitemap quality: detect orphan URLs and stale lastmod dates during site audits
 
 Do not audit sitemaps, site-wide duplication, orphan status, or redirect chains from single-page evidence. robots.txt collection must precede analysis; missing robots.txt is not a defect.
 

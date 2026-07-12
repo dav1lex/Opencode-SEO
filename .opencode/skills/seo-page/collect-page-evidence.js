@@ -40,7 +40,7 @@
 
   const hreflang = list('link[rel="alternate"][hreflang]').map((node) => ({
     lang: node.getAttribute("hreflang")?.toLowerCase() || null,
-    href: attr(node, "href"),
+    href: text(node.getAttribute("href")),
   }))
   const hasSelfRef = hreflang.some(
     (h) => h.lang === "x-default" || h.href === location.href || h.lang === null,

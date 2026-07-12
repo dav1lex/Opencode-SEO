@@ -34,6 +34,8 @@ Check:
 - agreement between markup and visible page content
 - placeholders, contradictions, duplicate entities, and misleading claims
 - optional enhancements supported by visible content, reported separately from findings
+- cross-page entity consistency: same entity type across pages must agree on identifiers, descriptions, and core properties
+- missing schema class: flag when a page type commonly benefiting from structured data has none while peers of the same type do
 
 Prefer JSON-LD. Never promise rich-result eligibility. Do not recommend deprecated rich-result types. Treat existing FAQPage as informational unless markup is inaccurate; use QAPage only for genuine user-submitted Q&A.
 

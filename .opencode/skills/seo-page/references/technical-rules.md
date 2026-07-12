@@ -13,6 +13,7 @@
 - `TECH-LINK-ANCHOR-CONFLICT`: Same anchor text points to different internal destinations, creating navigation ambiguity. Low maximum.
 - `TECH-META-MEANINGLESS`: Title or description provides no useful descriptive content (e.g., "Home", "Untitled", empty, identical to domain name). Medium maximum. Length alone is not meaningfulness. Default values injected by a CMS count as meaningless.
 - `TECH-ROBOTS-BLOCK`: robots.txt blocks the audited page or critical resources from crawling. High maximum. Absent robots.txt is default allow, not a defect.
+- `TECH-PERFORMANCE-OUTLIER`: A page has TTFB, transfer size, or decoded body size significantly higher (>3×) than the site median. Medium maximum. Evidence must include the outlier value and median.
 - `HREFLANG-SELF-MISSING`: Page has hreflang tags but omits a self-referencing entry or `x-default`. Medium maximum. Without self-reference, language targeting is incomplete.
 - `HREFLANG-RETURN-MISSING`: A hreflang target page does not link back to the source page (missing return tag). Medium maximum. Requires multi-page evidence.
 - `HREFLANG-CANONICAL-MISMATCH`: Hreflang URL points to a page whose canonical differs from the referenced URL. Medium maximum. Requires multi-page evidence.

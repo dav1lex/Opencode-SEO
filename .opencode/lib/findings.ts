@@ -34,6 +34,11 @@ export const rules = {
   "SCHEMA-SEARCH-ACTION": ["schema", "medium"],
   "SITE-DUPLICATE-TITLE": ["site", "high"],
   "SITE-DUPLICATE-DESC": ["site", "medium"],
+  "SITE-SITEMAP-ORPHAN": ["site", "high"],
+  "SITE-SITEMAP-STALE": ["site", "low"],
+  "TECH-PERFORMANCE-OUTLIER": ["technical", "medium"],
+  "SCHEMA-CROSS-PAGE-CONFLICT": ["schema", "medium"],
+  "SCHEMA-MISSING-CLASS": ["schema", "low"],
 } as const
 
 type Finding = {
