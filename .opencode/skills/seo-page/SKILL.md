@@ -16,10 +16,11 @@ Before navigation, call `seo-validate-url` and navigate only to its returned URL
 Use Playwright MCP as the source of rendered-page evidence:
 
 1. Navigate to the target and wait for the document to settle.
-2. Record final URL, document title, accessibility snapshot, and visible main content.
-3. Inspect rendered DOM for metadata, canonical, robots, headings, links, images, language, viewport, and structured data.
-4. Inspect relevant document response and browser console evidence when available.
-5. Take a screenshot only when visual evidence helps a finding.
+2. Read `.opencode/scripts/collect-page-evidence.js` and pass its function expression unchanged to Playwright's browser evaluation tool.
+3. Use its structured result as shared evidence for metadata, headings, links, images, visible text, and structured data.
+4. Capture an accessibility snapshot for semantic and interaction evidence.
+5. Inspect relevant document response and browser console evidence when available.
+6. Take a screenshot only when visual evidence helps a finding.
 
 Do not call measured Core Web Vitals from a normal browser visit. Label source-based concerns as potential risks.
 
